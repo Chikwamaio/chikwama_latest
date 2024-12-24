@@ -10,6 +10,7 @@ import {
 
 import LandingPage from './components/LandingPage';
 import SmartWallet from './components/SmartWallet';
+import Home from './components/Home';
 
 function App() {
   
@@ -18,7 +19,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path='/Landing' element={<LandingPage/>}></Route>
-        <Route path='/Home' element={<SmartWallet />}>
+        <Route path='/Home' element={<Home/>}>
         </Route>
 
           <Route path='*'  element={<LandingPage />}>
