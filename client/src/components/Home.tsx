@@ -10,24 +10,16 @@ import { useNavigate } from "react-router-dom";
 import cashPoints from '../../../contracts/artifacts/contracts/Cashpoints.sol/CashPoints.json';
 import Footer from './Footer.tsx';
 import NavBar from './NavBar.tsx';
-import React from 'react';
-
-
-
 
 
 const Home = () => {
-    const [count, setCount] = useState(0)
-    const [openSend, setOpenSend] = useState(false);
-    const [walletAddress, setWalletAddress] = useState('')
+    const [walletAddress, setWalletAddress] = useState<string>('')
     const [revenue, setRevenue] = useState("")
     const [tokenBalance, setTokenBalance] = useState("")
     const [tokenPrice, setTokenPrice] = useState<number>(0)
     const navigate = useNavigate();
     const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
     const abi = cashPoints.abi;
-    const [currentAccount, setCurrentAccount] = useState(null);
-    let NumberOfCashPoints;
     const ethereum = (window as any).ethereum;
     const provider = new ethers.providers.Web3Provider(ethereum);
     const signer = provider.getSigner();
@@ -39,17 +31,12 @@ const Home = () => {
 
     const [errorMessage, setErrorMessage] = useState('');
 
-    
-  const handleOpenSend = () => {
-    setOpenSend(true);
-  };
+
 
   const handleGotodao = () => {
     navigate('/dao');
   };
-  const closeSend = () => {
-    setOpenSend(false);
-  };
+
   const handleClose = () => {
     setState({
       ...state,
@@ -58,58 +45,59 @@ const Home = () => {
   };
 
 
-  const sendMoneyHandler = async (toAddress, amount, fee) => {
-    // Check if the address is valid
-    if (!ethers.utils.isAddress(toAddress)) {
-      setState({
-        open: true,
-        Transition: Fade,
-      });
-      setErrorMessage("Invalid address. Please check the recipient address.");
-      return;
-    }
+//   const sendMoneyHandler = async (toAddress, amount, fee) => {
+//     // Check if the address is valid
+//     if (!ethers.utils.isAddress(toAddress)) {
+//       setState({
+//         open: true,
+//         Transition: Fade,
+//       });
+//       setErrorMessage("Invalid address. Please check the recipient address.");
+//       return;
+//     }
   
-    const balance = await provider.getBalance(currentAccount!);
-    const address = toAddress;
-    const amountEther = ethers.utils.parseUnits(amount, "ether");
-    const feeEther = ethers.utils.parseUnits(fee, "ether");
-    const totalCost = amountEther.add(feeEther);
+//     const balance = await provider.getBalance(currentAccount!);
+//     const address = toAddress;
+//     const amountEther = ethers.utils.parseUnits(amount, "ether");
+//     const feeEther = ethers.utils.parseUnits(fee, "ether");
+//     const totalCost = amountEther.add(feeEther);
   
-    if (balance < totalCost) {
-      setState({
-        open: true,
-        Transition: Fade,
-      });
-      setErrorMessage(
-        `You have less than $${ethers.utils.formatEther(
-          totalCost
-        )} in your wallet ${currentAccount}`
-      );
-      return;
-    }
+//     if (balance < totalCost) {
+//       setState({
+//         open: true,
+//         Transition: Fade,
+//       });
+//       setErrorMessage(
+//         `You have less than $${ethers.utils.formatEther(
+//           totalCost
+//         )} in your wallet ${currentAccount}`
+//       );
+//       return;
+//     }
   
-    try {
-      const sendXdai = await cashPointsContract.send(amountEther, address, {
-        value: ethers.BigNumber.from(totalCost.toString()),
-      });
+//     try {
+//       const sendXdai = await cashPointsContract.send(amountEther, address, {
+//         value: ethers.BigNumber.from(totalCost.toString()),
+//       });
   
-      setState({
-        open: true,
-        Transition: Fade,
-      });
-      setErrorMessage(`Transaction successful: ${sendXdai.toString()}`);
-    } catch (error) {
-      setState({
-        open: true,
-        Transition: Fade,
-      });
-      setErrorMessage(`Transaction failed: ${error.message}`);
-    }
-  };
+//       setState({
+//         open: true,
+//         Transition: Fade,
+//       });
+//       setErrorMessage(`Transaction successful: ${sendXdai.toString()}`);
+//     } catch (error) {
+//       setState({
+//         open: true,
+//         Transition: Fade,
+//       });
+//       setErrorMessage(`Transaction failed: ${error.message}`);
+//     }
+//   };
 
   
     const checkWalletIsConnected = async () => {
       const network =(await provider.getNetwork()).chainId;
+      console.log(network);
     const accounts = await ethereum.request({ method: 'eth_requestAccounts'});
     setWalletAddress(accounts[0]);
 
@@ -151,7 +139,7 @@ const Home = () => {
                 }
               ]
             });
-        } catch (error) {
+        } catch (error: any) {
           setErrorMessage(error);
           return;
         }
@@ -160,16 +148,11 @@ const Home = () => {
 
       const TokenBalance = await cashPointsContract.balanceOf(accounts[0]);
 
-      setCurrentAccount(accounts[0])
       setTokenBalance(TokenBalance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
 
       const TokenPrice = await cashPointsContract.PRICE_PER_TOKEN();
       setTokenPrice(parseFloat(parseFloat(ethers.utils.formatEther(TokenPrice.toNumber())).toFixed(4)));
 
-
-      const NumberOfCashPointsTXN = await cashPointsContract.count();
-      NumberOfCashPoints = NumberOfCashPointsTXN.toNumber();
-      setCount(NumberOfCashPoints);
 
       provider.getBalance(contractAddress).then((balance) => {
         const balanceInDai = parseFloat(ethers.utils.formatEther(balance)).toFixed(2);
@@ -180,7 +163,7 @@ const Home = () => {
    }
 
    const goToCashPoints = async () => {
-        navigate('/CashPoints', contractAddress, abi)
+        //navigate('/CashPoints', contractAddress, abi)
    }
 
   
@@ -195,7 +178,7 @@ const Home = () => {
   return (
     
     <div className='container w-full h-screen text-slate-500'>
-    <NavBar walletAddress={walletAddress}/>
+    <NavBar walletAddress={walletAddress.toString()}/>
       <main className='flex flex-grow w-full md:pt-24 pt-24 min-h-max'>
       <div className='basis-1/2 pr-4'>
       <h2 className='md:text-3xl text-3xl text-slate-700 lg:text-6xl uppercase'> Welcome to</h2>

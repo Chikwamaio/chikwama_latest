@@ -7,9 +7,8 @@ import{
     setEnvelopingConfig,
     setProvider,
   } from '@rsksmart/rif-relay-client';
-  import { factory } from 'typescript';
   import { ethers } from 'ethers';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const SmartWallet = () => {
 
@@ -21,7 +20,6 @@ const SmartWallet = () => {
 
 
   const deploySmartWallet = async (index: string) => {
-  const accounts = await ethereum.request({ method: 'eth_requestAccounts'});
 
   const checkSmartWalletDeployment = async (txHash: string) => {
     if (!provider) {
@@ -133,7 +131,8 @@ const SmartWallet = () => {
   }, [provider]);
 
   return (<>
-  <p>{smartWalletAddress}</p></>)
+  <p>{smartWalletAddress}</p>
+  </>)
 
 }
 export default SmartWallet

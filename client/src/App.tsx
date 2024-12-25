@@ -1,6 +1,4 @@
 /// <reference types="vite/client" />
-import React, { useEffect, useState } from 'react'
-import { ethers } from 'ethers';
 import './App.css'
 import {
   BrowserRouter,
@@ -21,7 +19,7 @@ function App() {
         <Route path='/Landing' element={<LandingPage/>}></Route>
         <Route path='/Home' element={<Home/>}>
         </Route>
-
+        <Route path='/SmartWallet' element={<SmartWallet/>}></Route>
           <Route path='*'  element={<LandingPage />}>
           </Route>
           </Routes>

@@ -3,7 +3,6 @@ import MenuIcon from '@mui/icons-material/Menu';
 import IconButton from '@mui/material/IconButton';
 import { useState } from 'react';
 import chikwamaLogo from '../assets/Icon100.png';
-import React from 'react';
 
 
 const connectWalletHandler = async () => 
@@ -32,9 +31,9 @@ const connectWalletHandler = async () =>
 
 
 
-const NavBar = ({walletAddress}) => {
+const NavBar = (walletAddress: any) => {
   let [menuOpen, setMenuOpen] = useState(false);
-  const address = walletAddress;
+  const address = walletAddress.walletAddress;
   const handleOpenMenu = () =>
   {
     setMenuOpen(!menuOpen);

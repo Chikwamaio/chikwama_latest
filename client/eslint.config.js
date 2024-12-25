@@ -23,6 +23,8 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      'react/react-in-jsx-scope': 'off', // No need for React import with React 17+
+      'jsx-a11y/anchor-is-valid': 'warn', // Example accessibility rule
     },
   },
 )
