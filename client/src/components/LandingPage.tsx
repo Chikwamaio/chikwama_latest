@@ -39,7 +39,7 @@ const LandingPage: React.FC = () => {
             label: "Find a Cashpoint",
             description: "Go to the cash points page and check if there is a nearby cashpoint where you are from. Chikwama offers cashpoints where you can convert your cryptocurrency to local money.",
             icon: <RoomIcon />,
-            image: "/Users/Mwaya/Workspace/chikwama_latest/client/public/image.webp",
+            image: "/wepik-photo-mode-2022825-154940.png",
         },
         {
             label: "Buy Bitcoin (BTC)",
