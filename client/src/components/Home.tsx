@@ -30,7 +30,7 @@ const Home = () => {
     });
 
     const [errorMessage, setErrorMessage] = useState('');
-
+    const [account, setAccount] = useState<string>('');
 
 
   const handleGotodao = () => {
@@ -97,8 +97,8 @@ const Home = () => {
   
     const checkWalletIsConnected = async () => {
       const network =(await provider.getNetwork()).chainId;
-    const accounts = await ethereum.request({ method: 'eth_requestAccounts'});
-
+      const account = await getProviderWallet();
+    setAccount(account); 
 
     if(!ethereum)
     {
@@ -145,7 +145,7 @@ const Home = () => {
           
         }
 
-      const TokenBalance = await cashPointsContract.balanceOf(accounts[0]);
+      const TokenBalance = await cashPointsContract.balanceOf(account);
 
       setTokenBalance(TokenBalance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
 
@@ -191,7 +191,7 @@ const Home = () => {
     tokenAmount: string
   ) => {
 
-    const account = await getProviderWallet();
+  
     try {
       const relayTransactionOpts: UserDefinedDeployRequest = {
         request: {
@@ -293,7 +293,7 @@ const Home = () => {
   return (
     
     <div className='container w-full h-screen text-slate-500'>
-    <NavBar walletAddress={smartWalletAddress}/>
+    <NavBar walletAddress={smartWalletAddress} eoa={account}/>
       <main className='flex flex-grow w-full md:pt-24 pt-24 min-h-max'>
       <div className='basis-1/2 pr-4'>
       <h2 className='md:text-3xl text-3xl text-slate-700 lg:text-6xl uppercase'> Welcome to</h2>
@@ -306,7 +306,7 @@ const Home = () => {
       </div>
     <div className='basis-1/2 grid grid-cols-1 align-center bg-opacity-75  p-4'>
     <h4 className='text-xl text-slate-700 lg:text-2xl uppercase text-left'> DAO Metrics:</h4>
-    <div className='bg-white mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative'>
+    <div className='bg-white mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative  z-30'>
         <CalculateIcon />
         <p className='text-xl text-yellow-400 text-left'>US$ {tokenPrice}</p> 
         <p className='text-left'>Current Price</p>
@@ -318,7 +318,7 @@ const Home = () => {
         </div>
     </div>
     
-    <div className='bg-white mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative'>
+    <div className='bg-white mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative z-10'>
         <PieChartIcon />
         <p className='text-xl text-yellow-400 text-left'>{tokenBalance} CHK</p> 
         <p className='text-left'>Your Balance</p>
