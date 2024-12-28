@@ -4,6 +4,7 @@ pragma solidity >=0.4.22 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 contract CashPoints is ERC20 {
@@ -18,6 +19,7 @@ contract CashPoints is ERC20 {
         bool _isCashPoint;
     }
 
+    IERC20 public DollarToken;
     mapping(address => CashPoint) public cashpoints;
     mapping(uint => address) public keys;
     event CreatedCashPoint(address cashpoint);
@@ -33,14 +35,14 @@ contract CashPoints is ERC20 {
     uint public count = 0;
     bool public reentrancyLock = false; // Added reentrancyLock
 
-    constructor() ERC20("Chikwama", "CHK") {
+    constructor(address _tokenAddress) ERC20("Chikwama", "CHK") {
+        DollarToken = IERC20(_tokenAddress);
         Owner = payable(msg.sender);
         _mint(Owner, 10000);
         AVAILABLE_TOKENS = 90000;
     }
 
     receive() external payable {
-        setPrice();
         emit Received(msg.sender, msg.value);
     }
 
@@ -53,22 +55,35 @@ contract CashPoints is ERC20 {
     }
 
     function setPrice() public {
-        require(address(this).balance > 0, "There is no value in this contract");
-        PRICE_PER_TOKEN = (address(this).balance / totalSupply());
+        require(DollarToken.balanceOf(address(this))> 0, "There is no value in this contract");
+        PRICE_PER_TOKEN = (DollarToken.balanceOf(address(this))/ totalSupply());
     }
 
-    function buyTokens(uint _amount) external payable nonReentrant {
-        require(_amount * PRICE_PER_TOKEN == msg.value, "You are sending the wrong amount to this contract");
+    function buyTokens(uint _amount) external nonReentrant {
         require(totalSupply() + _amount <= MAX_SUPPLY, "Max supply reached");
+        require(
+            DollarToken.allowance(msg.sender, address(this)) >= _amount * PRICE_PER_TOKEN, 
+            "Insufficient allowance for tokens and fee"
+        );
+        bool success = DollarToken.transferFrom(msg.sender, address(this), _amount * PRICE_PER_TOKEN);
+        require(success, "Token transfer failed");
+
+        
         _mint(msg.sender, _amount);
         setPrice();
         AVAILABLE_TOKENS -= _amount;
     }
 
-    function addCashPoint(string memory name, string memory city, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external payable nonReentrant {
+    function addCashPoint(string memory name, string memory city, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external nonReentrant {
         uint fee = duration * CASHPOINT_FEE;
-        require(msg.value == fee, "Please pay the recommended fee");
         require(!cashpoints[msg.sender]._isCashPoint, "Already a cashpoint");
+        require(
+            DollarToken.allowance(msg.sender, address(this)) >= fee, 
+            "Insufficient allowance for tokens and fee"
+        );
+        bool success = DollarToken.transferFrom(msg.sender, address(this), fee);
+        require(success, "Token transfer failed");
+        
         cashpoints[msg.sender] = CashPoint(name, city, phone, currency, buy, sell, endtime, true);
         count++;
         keys[count] = msg.sender;
@@ -78,8 +93,13 @@ contract CashPoints is ERC20 {
 
     function updateCashPoint(string memory name, string memory city, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external payable nonReentrant {
         uint fee = duration * CASHPOINT_FEE;
-        require(msg.value == fee, "Please pay the recommended fee");
         require(cashpoints[msg.sender]._isCashPoint, "Not a cashpoint");
+        require(
+            DollarToken.allowance(msg.sender, address(this)) >= fee, 
+            "Insufficient allowance for tokens and fee"
+        );
+        bool success = DollarToken.transferFrom(msg.sender, address(this), fee);
+        require(success, "Token transfer failed");
         cashpoints[msg.sender] = CashPoint(name, city, phone, currency, buy, sell, endtime, true);
         setPrice();
         emit UpdatedCashPoint(msg.sender);
@@ -102,9 +122,9 @@ contract CashPoints is ERC20 {
         _;
     }
     
-    function transferXDai(address payable _to, uint _amount) public {
-        (bool success, ) = _to.call{value: _amount}("");
-        require(success, "Failed to send xDai");
+    function transferDollarTokens(address _to, uint _amount) public {
+        bool success = DollarToken.transferFrom(address(this), _to, _amount);
+        require(success, "Token transfer failed");
     }
 
     function checkIfICanWithdraw(uint256 _tokens) public view returns (bool)
@@ -122,18 +142,23 @@ contract CashPoints is ERC20 {
     //holders can withdraw from the contract because payable was added to the state variable above
     function withdraw (uint _tokens) public onlyHolder nonReentrant{
         setPrice();
-        require(address(this).balance > 0, "There is no value in this contract");
+        require(DollarToken.balanceOf(address(this))> 0, "There is no value in this contract");
         require(checkIfICanWithdraw(_tokens), "You are trying to withdraw more than your stake");
         _burn(msg.sender, _tokens);
         AVAILABLE_TOKENS += _tokens;
-        transferXDai(payable(msg.sender), checkAmountToTransfer(_tokens));
+        transferDollarTokens(msg.sender, checkAmountToTransfer(_tokens));
     }
     
-    function send(uint _amount, address _to) external payable nonReentrant{
+    function send(uint _amount, address _to) external nonReentrant{
       uint fee = (TRANSACTION_COMMISION/100) * _amount;
       uint total = fee + _amount;
-      require(msg.value >= total, "Not enough funds sent");
-      transferXDai(payable(_to), _amount);
+              require(
+            DollarToken.allowance(msg.sender, address(this)) >= total, 
+            "Insufficient allowance for transfer and fee"
+        );
+      bool success = DollarToken.transferFrom(msg.sender, address(this), _amount);
+      require(success, "Token transfer failed");
+      transferDollarTokens(payable(_to), _amount);
       setPrice(); 
     }
 

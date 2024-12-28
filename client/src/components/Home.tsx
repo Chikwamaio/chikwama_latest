@@ -162,7 +162,7 @@ const Home = () => {
    }
 
    const goToCashPoints = async () => {
-        //navigate('/CashPoints', contractAddress, abi)
+        navigate('/CashPoints', contractAddress)
    }
 
    const [smartWalletAddress, setSmartWalletAddress] = useState<string>('');
@@ -306,7 +306,7 @@ const Home = () => {
       </div>
     <div className='basis-1/2 grid grid-cols-1 align-center bg-opacity-75  p-4'>
     <h4 className='text-xl text-slate-700 lg:text-2xl uppercase text-left'> DAO Metrics:</h4>
-    <div className='bg-white mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative  z-30'>
+    <div className='bg-white rounded-md mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative  z-30'>
         <CalculateIcon />
         <p className='text-xl text-yellow-400 text-left'>US$ {tokenPrice}</p> 
         <p className='text-left'>Current Price</p>
@@ -318,7 +318,7 @@ const Home = () => {
         </div>
     </div>
     
-    <div className='bg-white mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative z-10'>
+    <div className='bg-white rounded-md mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative z-10'>
         <PieChartIcon />
         <p className='text-xl text-yellow-400 text-left'>{tokenBalance} CHK</p> 
         <p className='text-left'>Your Balance</p>
@@ -330,7 +330,7 @@ const Home = () => {
         </div>
     </div>
     
-    <div className='bg-white mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative'>
+    <div className='bg-white rounded-md mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative'>
         <AccountBalanceIcon />
         <p className='text-xl text-yellow-400 text-left'>US$ {revenue}</p> 
         <p className='text-left'>Contract Balance</p>

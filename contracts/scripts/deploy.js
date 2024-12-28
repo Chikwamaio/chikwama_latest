@@ -5,10 +5,13 @@
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
 const hre = require("hardhat");
+require('dotenv').config();
 
 async function main() {
+  const DollarTokenContractAddress = process.env.DollarTokenContract;
+  console.log(`DollarTokenContractAddress: ${DollarTokenContractAddress}`);
   const CashPoints = await hre.ethers.getContractFactory("CashPoints");
-  const cashpoints = await CashPoints.deploy();
+  const cashpoints = await CashPoints.deploy(DollarTokenContractAddress);
 
   await cashpoints.deployed();
 

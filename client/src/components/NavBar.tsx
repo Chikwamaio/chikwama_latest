@@ -73,13 +73,13 @@ const NavBar = ({walletAddress, eoa}:Prop) => {
         <li className="cursor-pointer md:mt-0 mt-2 mr-3 hover:text-fuchsia-700"><a href='/cashpoints'>Cashpoints</a></li>
         <li className="cursor-pointer md:mt-0 mt-2 mr-3 hover:text-fuchsia-700"><a href='/dao'>DAO</a></li>
    
-        <button onClick={() => connectWalletHandler(address)} className="text-white md:mt-0 bg-[#872A7F]  py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-fuchsia-700 hover:border hover:border-fuchsia-700 focus:outline-none focus:ring ${}">
-        {address.length > 0?  address.slice(0,10)+'...': "Connect"}
+        <button onClick={() => connectWalletHandler(address)} className="text-white w-[160px] truncate md:mt-0 bg-[#872A7F]   py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-fuchsia-700 hover:border hover:border-fuchsia-700 focus:outline-none focus:ring ${}">
+        {address.length > 0?  address: "Connect"}
         </button>
         <div className='group aboslute right-0 top-0'>
         <HelpOutlineIcon/>
             <div className='hidden group-hover:block absolute right-20 bg-gray-800 text-white text-sm p-2 rounded-lg shadow-md w-60 tooltip-container break-words'>
-            This is your Chikwama wallet address, it is connected to the account: {EOA} in your MetaMask wallet. Click it to copy to clipboard!
+            This is your Chikwama wallet address, it is connected to the account: {EOA} in your MetaMask wallet. Click it to copy!
             </div>
             </div>
       

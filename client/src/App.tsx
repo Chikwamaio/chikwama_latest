@@ -9,6 +9,7 @@ import {
 import LandingPage from './components/LandingPage';
 import SmartWallet from './components/SmartWallet';
 import Home from './components/Home';
+import CashPoints from './components/CashPoints';
 
 function App() {
   
@@ -17,8 +18,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path='/Landing' element={<LandingPage/>}></Route>
-        <Route path='/Home' element={<Home/>}>
-        </Route>
+        <Route path='/Home' element={<Home/>}></Route>
+        <Route path='/CashPoints' element={<CashPoints/>}></Route>
         <Route path='/SmartWallet' element={<SmartWallet/>}></Route>
           <Route path='*'  element={<LandingPage />}>
           </Route>
