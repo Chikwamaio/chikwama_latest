@@ -31,6 +31,7 @@ contract CashPoints is ERC20 {
     uint public AVAILABLE_TOKENS;
     uint public PRICE_PER_TOKEN; //erc20 token price
     uint public CASHPOINT_FEE = 0.5 ether;
+    uint public BASE_FEE = 1 ether;
     uint public TRANSACTION_COMMISION = 1; //percentage commission on transactions routed through the contract
     uint public count = 0;
     bool public reentrancyLock = false; // Added reentrancyLock
@@ -55,8 +56,9 @@ contract CashPoints is ERC20 {
     }
 
     function setPrice() public {
-        require(DollarToken.balanceOf(address(this))> 0, "There is no value in this contract");
-        PRICE_PER_TOKEN = (DollarToken.balanceOf(address(this))/ totalSupply());
+        uint256 contractBalance = DollarToken.balanceOf(address(this));
+        require(contractBalance > 0, "There is no value in this contract");
+        PRICE_PER_TOKEN = contractBalance / totalSupply();
     }
 
     function buyTokens(uint _amount) external nonReentrant {
@@ -76,6 +78,7 @@ contract CashPoints is ERC20 {
 
     function addCashPoint(string memory name, string memory city, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external nonReentrant {
         uint fee = duration * CASHPOINT_FEE;
+
         require(!cashpoints[msg.sender]._isCashPoint, "Already a cashpoint");
         require(
             DollarToken.allowance(msg.sender, address(this)) >= fee, 
@@ -91,8 +94,8 @@ contract CashPoints is ERC20 {
         emit CreatedCashPoint(msg.sender);
     }
 
-    function updateCashPoint(string memory name, string memory city, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external payable nonReentrant {
-        uint fee = duration * CASHPOINT_FEE;
+    function updateCashPoint(string memory name, string memory city, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external nonReentrant {
+        uint fee = (duration == 0)?BASE_FEE: duration * CASHPOINT_FEE;
         require(cashpoints[msg.sender]._isCashPoint, "Not a cashpoint");
         require(
             DollarToken.allowance(msg.sender, address(this)) >= fee, 
@@ -123,7 +126,7 @@ contract CashPoints is ERC20 {
     }
     
     function transferDollarTokens(address _to, uint _amount) public {
-        bool success = DollarToken.transferFrom(address(this), _to, _amount);
+        bool success = DollarToken.transfer(_to, _amount); // Use transfer instead of transferFrom
         require(success, "Token transfer failed");
     }
 
@@ -141,8 +144,8 @@ contract CashPoints is ERC20 {
 
     //holders can withdraw from the contract because payable was added to the state variable above
     function withdraw (uint _tokens) public onlyHolder nonReentrant{
-        setPrice();
         require(DollarToken.balanceOf(address(this))> 0, "There is no value in this contract");
+        setPrice();
         require(checkIfICanWithdraw(_tokens), "You are trying to withdraw more than your stake");
         _burn(msg.sender, _tokens);
         AVAILABLE_TOKENS += _tokens;

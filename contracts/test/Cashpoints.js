@@ -84,7 +84,7 @@ describe("Cashpoints", function () {
 
     it('Should set the price correctly', async function () {
       const { cashpoints, owner, addr1, initialSupply, dollarToken } = await loadFixture(deployCashpointsContract);
-      const amount = ethers.utils.parseUnits("100", "ether");
+      const amount = ethers.utils.parseUnits("0.5", "ether");
       await dollarToken.transfer(cashpoints.address, amount);
       
       await cashpoints.setPrice();
@@ -95,66 +95,86 @@ describe("Cashpoints", function () {
     })
 
     it('Allow only holder to withdraw all funds', async function () {
-      const { cashpoints, owner, addr1 } = await loadFixture(deployCashpointsContract);
+      const { cashpoints, owner, addr1, dollarToken } = await loadFixture(deployCashpointsContract);
       const tokens = 10000;
       
-      await addr1.sendTransaction({ to: cashpoints.address, value: 10000 });
-      const contractBalance = await ethers.provider.getBalance(cashpoints.address);
+      const amount = ethers.utils.parseUnits("5", "ether");
+      await dollarToken.transfer(cashpoints.address, amount);
+      const contractBalance = await dollarToken.balanceOf(cashpoints.address);
+      await cashpoints.setPrice();
+      const mystake = await cashpoints.checkAmountToTransfer(tokens);
 
-      await expect(cashpoints.connect(owner).withdraw(tokens)).to.changeEtherBalance(cashpoints.address, -contractBalance);
-      expect(await cashpoints.totalSupply()).to.equal(0);
-      const availabletokens = await cashpoints.AVAILABLE_TOKENS();
-      assert.equal(availabletokens, 100000);
+      expect(contractBalance).to.equal(mystake);
 
+      const tokensBefore = await cashpoints.AVAILABLE_TOKENS();
+      await cashpoints.withdraw(tokens);
+      const tokensAfter = await cashpoints.AVAILABLE_TOKENS();
+      expect(tokensBefore.add(tokens)).to.equal(tokensAfter);
+      expect(await dollarToken.balanceOf(cashpoints.address)).to.equal(0);
     })
 
     it('Should fail if holder tries to withdraw more than their stake', async function () {
-      const { cashpoints, owner, addr1 } = await loadFixture(deployCashpointsContract);
-      const amount = ethers.utils.parseUnits("2", "ether");
+      const { cashpoints, owner, addr1, dollarToken } = await loadFixture(deployCashpointsContract);
+      const tokens = 10000;
       
-      await addr1.sendTransaction({ to: cashpoints.address, value: amount });
-      await expect(cashpoints.connect(owner).withdraw(ethers.utils.parseUnits("2.1", "ether"))).to.be.revertedWith('You are trying to withdraw more than your stake');
+      const amount = ethers.utils.parseUnits("5", "ether");
+      await dollarToken.transfer(cashpoints.address, amount);
+      const contractBalance = await dollarToken.balanceOf(cashpoints.address);
+      await cashpoints.setPrice();
+      const mystake = await cashpoints.checkAmountToTransfer(tokens);
+
+      expect(contractBalance).to.equal(mystake);
+      
+      await expect(cashpoints.withdraw(tokens + 1)).to.be.revertedWith('You are trying to withdraw more than your stake');
+
     })
 
 
     it("Should fail user tries to send the wrong amount for tokens", async function () {
-      const { cashpoints, owner, addr1 } = await loadFixture(deployCashpointsContract);
-      const amount = ethers.utils.parseUnits("2", "ether");
-      await addr1.sendTransaction({ to: cashpoints.address, value: amount });
-      await expect(cashpoints.connect(addr1).buyTokens(20, { value: ethers.utils.parseUnits("2", "ether")})).to.be.revertedWith('You are sending the wrong amount to this contract');
+      const { cashpoints, owner, addr1, dollarToken } = await loadFixture(deployCashpointsContract);
+      const tokensToBuy = 1000;
+      
+      const amount = ethers.utils.parseUnits("5", "ether");
+      await dollarToken.transfer(cashpoints.address, amount);
+      await dollarToken.balanceOf(cashpoints.address);
+      await cashpoints.setPrice();
+      const newPrice = await cashpoints.PRICE_PER_TOKEN();
+      const cost = newPrice//*tokensToBuy;
+ 
+      await dollarToken.approve(cashpoints.address, cost)
+
+      await expect(cashpoints.connect(addr1).buyTokens(tokensToBuy)).to.be.revertedWith('Insufficient allowance for tokens and fee');
     })
 
     it("Should let user buy tokens if there is value in the contract", async function () {
-      const { cashpoints, owner, addr1, initialSupply } = await loadFixture(deployCashpointsContract);
+      const { cashpoints, owner, addr1, initialSuppl, dollarToken } = await loadFixture(deployCashpointsContract);
       const newtokens = 18000;
-      const amount = ethers.utils.parseUnits("10", "ether");
-      
-      await addr1.sendTransaction({ to: cashpoints.address, value: amount });
-      
+
+      const amount = ethers.utils.parseUnits("5", "ether");
+      await dollarToken.transfer(cashpoints.address, amount);
+      await dollarToken.balanceOf(cashpoints.address);
       await cashpoints.setPrice();
+
+      const tokensBefore = await cashpoints.AVAILABLE_TOKENS();
       const newPrice = await cashpoints.PRICE_PER_TOKEN();
-      let cost = ethers.utils.formatEther(newPrice) * newtokens;
-      const buyTokens = cashpoints.connect(addr1).buyTokens(newtokens, { value: ethers.utils.parseUnits(cost.toString(), "ether")});
+      const cost = newPrice.mul(ethers.BigNumber.from(newtokens)); 
+ 
+      await dollarToken.approve(cashpoints.address, cost)
+      const buyTokens = cashpoints.buyTokens(newtokens);
       await expect(buyTokens).to.changeTokenBalance(
         cashpoints,
-        addr1,
+        owner,
         newtokens
       );
-      const totalSupply = await cashpoints.totalSupply();
-      const contractBalance = await ethers.provider.getBalance(cashpoints.address);
-      const availabletokens = await cashpoints.AVAILABLE_TOKENS();
-      assert.equal( totalSupply, initialSupply + newtokens);
-      assert.equal(ethers.utils.formatEther(contractBalance), parseInt(ethers.utils.formatEther(amount)) + cost);
-      assert.equal(availabletokens, 90000-newtokens);
+      const tokensAfter = await cashpoints.AVAILABLE_TOKENS();
+      expect(tokensBefore.sub(newtokens)).to.equal(tokensAfter);
     });
 
     
     
     it("Should let user create and update a cashpoint", async function () {
-      const { cashpoints, owner, addr1, addr2, initialSupply } = await loadFixture(deployCashpointsContract);
-      const amount = ethers.utils.parseUnits("10", "ether");
-      
-      await addr1.sendTransaction({ to: cashpoints.address, value: amount });
+      const { cashpoints, owner, addr1, addr2, initialSupply, dollarToken } = await loadFixture(deployCashpointsContract);
+
       const duration = 10;
       const name = 'Alpha';
       const city = 'blantyre'
@@ -165,17 +185,21 @@ describe("Cashpoints", function () {
       const now = new Date();
       const endtime =  new Date(now.setDate(now.getDate() + duration));
       const fee = await cashpoints.CASHPOINT_FEE();
-      let cost = ethers.utils.formatEther(fee) * duration;
-      const addCashPoint = cashpoints.connect(addr2).addCashPoint(name, city, phone, currency, buy, sell, endtime.toString(), duration, { value: ethers.utils.parseUnits(cost.toString(), "ether")});
-      await expect(addCashPoint).to.emit(cashpoints, "CreatedCashPoint").withArgs(addr2.address);
+      const basefee = await cashpoints.BASE_FEE();
+      const cost = fee.mul(duration); 
+      await dollarToken.approve(cashpoints.address, cost)
+
+      const balanceBefore = await dollarToken.balanceOf(owner.address)
+      const addCashPoint = cashpoints.addCashPoint(name, city, phone, currency, buy, sell, endtime.toString(), duration);
+      const balanceAfter = await dollarToken.balanceOf(owner.address)
+      expect(balanceBefore.sub(cost)).to.equal(balanceAfter);
+      await expect(addCashPoint).to.emit(cashpoints, "CreatedCashPoint").withArgs(owner.address);
+
       const newEndTime =  new Date(endtime.setDate(endtime.getDate() + duration));
-      const updateCashPoint = cashpoints.connect(addr2).updateCashPoint(name, city, phone, currency, buy, sell, newEndTime.toString(), 0, { value: ethers.utils.parseUnits((0).toString(), "ether")});
-      await expect(updateCashPoint).to.emit(cashpoints, "UpdatedCashPoint").withArgs(addr2.address);
-      //console.log(await cashpoints.getCashPoint(addr2.address));
-      // await expect(addCashPoint).to.changeEtherBalance(
-      //   cashpoints,
-      //   cost
-      // );
+      await dollarToken.approve(cashpoints.address, basefee);
+      const updateCashPoint = cashpoints.updateCashPoint(name, city, phone, currency, buy, sell, newEndTime.toString(), 0);
+      await expect(updateCashPoint).to.emit(cashpoints, "UpdatedCashPoint").withArgs(owner.address);
+
     });
 
     it("Should let users route transfers through the contract for a fee", async function () {
