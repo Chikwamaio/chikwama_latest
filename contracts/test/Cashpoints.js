@@ -203,20 +203,36 @@ describe("Cashpoints", function () {
     });
 
     it("Should let users route transfers through the contract for a fee", async function () {
-      const { cashpoints, owner, addr1, addr2, initialSupply } = await loadFixture(deployCashpointsContract);
+      const { cashpoints, owner, addr1, addr2, initialSupply, dollarToken } = await loadFixture(deployCashpointsContract);
+      
       const amount = ethers.utils.parseUnits("10", "ether");
+      await dollarToken.transfer(cashpoints.address, amount);
 
       const fee = await cashpoints.TRANSACTION_COMMISION();
-      let cost = (parseInt(fee.toString())/100) * amount;
-      let total = parseInt(amount) + parseInt(cost);
-      const sendXdai = cashpoints.connect(addr1).send(amount, addr2.address, { value: ethers.BigNumber.from(total.toString()) });
-      await expect(sendXdai).to.changeEtherBalances([addr1.address, addr2.address], [ethers.utils.parseUnits("-10.1", "ether"), ethers.utils.parseUnits("10", "ether")]);
-      const contractBalance = await ethers.provider.getBalance(cashpoints.address);
-      assert.equal(contractBalance.toString(), cost.toString());
-      // await expect(addCashPoint).to.changeEtherBalance(
-      //   cashpoints,
-      //   cost
-      // );
+      // Calculate the fee as a percentage of the amount
+      let cost = fee.div(100).mul(amount);
+      let total = amount.add(cost);
+    
+      // Approve the contract to spend the total amount (amount + fee)
+      await dollarToken.approve(cashpoints.address, total);
+    
+  
+    
+      // Check the balances before and after the transaction
+      const ownerBalanceBefore = await dollarToken.balanceOf(owner.address);
+      const addr2BalanceBefore = await dollarToken.balanceOf(addr2.address);
+      const contractBalanceBefore = await dollarToken.balanceOf(cashpoints.address);
+    
+      // Perform the transfer
+      await cashpoints.send(amount, addr2.address);
+    
+      const ownerBalanceAfter = await dollarToken.balanceOf(owner.address);
+      const addr2BalanceAfter = await dollarToken.balanceOf(addr2.address);
+      const contractBalanceAfter = await dollarToken.balanceOf(cashpoints.address);
+      // Check if the balances changed as expected
+      expect(ownerBalanceBefore.sub(ownerBalanceAfter)).to.equal(total);
+      expect(addr2BalanceAfter.sub(addr2BalanceBefore)).to.equal(amount);
+      expect(contractBalanceAfter.sub(contractBalanceBefore)).to.equal(cost);
     });
 
     
