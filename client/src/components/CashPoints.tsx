@@ -181,25 +181,32 @@ const CashPoints = () => {
     };
 
     useEffect(() => {
+
         const vectorSource = new VectorSource();
-        const cps = [
-          { city: 'Blantyre, Malawi', coordinates: [34.995, -15.786], cashPointName: 'Alpha', address: '0x54910e51713295dE5428470837930a6E35A41967', phoneNumber:'+265 999 999 999', currency:'MWK', buyRate: 1700, sellRate:2000, until: '2025-01-01'},
-          { city: 'Lilongwe, Malawi', coordinates: [33.7741, -13.9626], cashPointName: 'Beta', address: '0x54910e51713295dE5428470837930a6E35A41967', phoneNumber:'+265 999 999 888', currency:'MWK', buyRate: 1800, sellRate:2000, until: '2025-01-01'},
-          // Add other cities...
-        ];
+        const cps = data;
+
     
         cps.forEach((cp) => {
+
+          const lat = parseFloat(ethers.utils.formatEther(cp[2] || "0")); // Handle undefined or invalid values
+          const long = parseFloat(ethers.utils.formatEther(cp[3] || "0"));
+          const buyRate = parseFloat((cp[7] || "0")).toFixed(2);
+          const sellRate = parseFloat((cp[8] || "0")).toFixed(2);
+
+        const coords: [number, number] = [long, lat];
+
           const CashPoint = new Feature({
-            geometry: new Point(fromLonLat(cp.coordinates)),
+            geometry: new Point(fromLonLat(coords)),
             name: cp.cashPointName,
             address: cp.address,
-            phoneNumber: cp.phoneNumber,
-            currency: cp.currency,
-            buyRate: cp.buyRate,
-            sellRate: cp.sellRate,
-            until: cp.until,
+            phoneNumber: cp[5],
+            currency: cp._currency,
+            buyRate: buyRate,
+            sellRate: sellRate,
+            until: cp[9],
             city: cp.city,
           });
+
           CashPoint.setStyle(
             new Style({
               image: new Icon({
@@ -260,7 +267,7 @@ const CashPoints = () => {
           map.setTarget('');
         };
     
-    }, []);
+    }, [data]);
 
     useEffect(() => {
       const index = "0";
@@ -415,7 +422,9 @@ const CashPoints = () => {
       //   return estimate;
       // };
 
-    async function createCashPointHandler(cashPointName: any, phoneNumber: any, currency: any, buyRate: any, sellRate: any, duration: number, fee: string, lat: any, long: any): Promise<void> {
+    async function createCashPointHandler(cashPointName: any, phoneNumber: any, accuracy: any, currency: any, buyRate: any, sellRate: any, duration: number, fee: string, lat: any, long: any): Promise<void> {
+      
+      console.log(accuracy, lat, long);
       const now = new Date();
       const endtime =  new Date(now.setDate(now.getDate() + duration));
     
@@ -454,10 +463,19 @@ const CashPoints = () => {
       console.log('Approve params:',tokenContract, destinationContract, fee)
       await makeApproveCall( tokenContract, destinationContract, fee)
 
-      const params = [cashPointName, city, phoneNumber, currency, buyRate, sellRate, endtime.toString(), duration]
+
+      const mylat = lat.toString();
+      const mylong = long.toString();
+      const myAccuracy = accuracy.toString();
+
+      const scaledLat= ethers.utils.parseUnits(mylat, "ether");
+      const scaledLong = ethers.utils.parseUnits(mylong, "ether");
+      const scaledAccuracy = ethers.utils.parseUnits(myAccuracy, "ether");
+ 
+      const params = [cashPointName, city, scaledLat, scaledLong, scaledAccuracy, phoneNumber, currency, buyRate, sellRate, endtime.toString(), duration]
    
 
-    const funcData = calculateAbiEncodedFunction('addCashPoint(string name, string  city, string  phone, string currency, uint buy, uint sell, string endtime, uint duration)', params)
+    const funcData = calculateAbiEncodedFunction('addCashPoint(string name, string  city, int256 latitude, int256 longitude, uint accuracy, string  phone, string currency, uint buy, uint sell, string endtime, uint duration)', params)
     //addCashPoint(name, city, phone, currency, buy, sell, endtime.toString(), duration)
     
     const swAddress = smartWalletAddress;
@@ -498,7 +516,6 @@ const CashPoints = () => {
       };
 
     const getCashPoints = async () => {
-      console.log('line 454:',smartWalletAddress)
       try {
         const checkIfRegistered = await cashPointsContract.cashpoints(smartWalletAddress);
         setIsCashPoint(checkIfRegistered._isCashPoint);
@@ -517,7 +534,7 @@ const CashPoints = () => {
             let NumberOfCashPointsTXN = await cashPointsContract.count();
             let count = NumberOfCashPointsTXN.toNumber();
             console.log('number of cashpoints:', count);
-            let cashPoints = [];
+            let registeredCashPoints = [];
             let active = [];
             for (let i = 1; i <= count; i++) {
                 let CashPointAddress = await cashPointsContract.keys(i);
@@ -525,12 +542,10 @@ const CashPoints = () => {
                 let now = new Date();
                 let cpDate = new Date(CashPoint._endTime);
                 active.push(cpDate >= now);
-                console.log(CashPoint)
-                cashPoints.push(CashPoint);
+                registeredCashPoints.push(CashPoint);
             }
             setIsActive(active);
-            getData(cashPoints);
-            
+            getData(registeredCashPoints);
         }
     }
 

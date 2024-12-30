@@ -11,6 +11,9 @@ contract CashPoints is ERC20 {
     struct CashPoint {
         string _name; //short Name
         string city;
+        int256 latitude; // latitude coordinate
+        int256 longitude; // longitude coordinate
+        uint accuracy; // accuracy of the location in meters
         string _phoneNumber;
         string _currency;
         uint _buy; //local currency to usd buy rate
@@ -76,7 +79,7 @@ contract CashPoints is ERC20 {
         AVAILABLE_TOKENS -= _amount;
     }
 
-    function addCashPoint(string memory name, string memory city, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external nonReentrant {
+    function addCashPoint(string memory name, string memory city, int256 latitude, int256 longitude, uint accuracy, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external nonReentrant {
         uint fee = duration * CASHPOINT_FEE;
 
         require(!cashpoints[msg.sender]._isCashPoint, "Already a cashpoint");
@@ -87,14 +90,14 @@ contract CashPoints is ERC20 {
         bool success = DollarToken.transferFrom(msg.sender, address(this), fee);
         require(success, "Token transfer failed");
         
-        cashpoints[msg.sender] = CashPoint(name, city, phone, currency, buy, sell, endtime, true);
+        cashpoints[msg.sender] = CashPoint(name, city, latitude, longitude, accuracy, phone, currency, buy, sell, endtime, true);
         count++;
         keys[count] = msg.sender;
         setPrice();
         emit CreatedCashPoint(msg.sender);
     }
 
-    function updateCashPoint(string memory name, string memory city, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external nonReentrant {
+    function updateCashPoint(string memory name, string memory city, int256 latitude, int256 longitude, uint accuracy, string memory phone, string memory currency, uint buy, uint sell, string memory endtime, uint duration) external nonReentrant {
         uint fee = (duration == 0)?BASE_FEE: duration * CASHPOINT_FEE;
         require(cashpoints[msg.sender]._isCashPoint, "Not a cashpoint");
         require(
@@ -103,7 +106,7 @@ contract CashPoints is ERC20 {
         );
         bool success = DollarToken.transferFrom(msg.sender, address(this), fee);
         require(success, "Token transfer failed");
-        cashpoints[msg.sender] = CashPoint(name, city, phone, currency, buy, sell, endtime, true);
+        cashpoints[msg.sender] = CashPoint(name, city, latitude, longitude, accuracy, phone, currency, buy, sell, endtime, true);
         setPrice();
         emit UpdatedCashPoint(msg.sender);
     }

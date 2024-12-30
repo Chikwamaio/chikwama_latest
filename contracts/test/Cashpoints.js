@@ -177,27 +177,35 @@ describe("Cashpoints", function () {
 
       const duration = 10;
       const name = 'Alpha';
-      const city = 'blantyre'
+      const city = 'Blantyre';
       const phone = ethers.utils.parseUnits("0996971997", "ether");
       const currency = 'MWK, Malawi Kwacha';
       const buy = ethers.utils.parseUnits("1000", "ether");
       const sell = ethers.utils.parseUnits("1025", "ether"); 
       const now = new Date();
       const endtime =  new Date(now.setDate(now.getDate() + duration));
+      const latitude = ethers.utils.parseUnits("-15.7801", "ether");
+      const longitude = ethers.utils.parseUnits("35.0190", "ether");
+      
+      const accuracy = 50; // Example accuracy in meters
       const fee = await cashpoints.CASHPOINT_FEE();
       const basefee = await cashpoints.BASE_FEE();
-      const cost = fee.mul(duration); 
+      const cost = fee.mul(duration);
       await dollarToken.approve(cashpoints.address, cost)
 
       const balanceBefore = await dollarToken.balanceOf(owner.address)
-      const addCashPoint = cashpoints.addCashPoint(name, city, phone, currency, buy, sell, endtime.toString(), duration);
+      const addCashPoint = await cashpoints.addCashPoint(
+        name, city, latitude, longitude, accuracy, phone, currency, buy, sell, endtime.toString(), duration
+      );
       const balanceAfter = await dollarToken.balanceOf(owner.address)
       expect(balanceBefore.sub(cost)).to.equal(balanceAfter);
       await expect(addCashPoint).to.emit(cashpoints, "CreatedCashPoint").withArgs(owner.address);
 
       const newEndTime =  new Date(endtime.setDate(endtime.getDate() + duration));
       await dollarToken.approve(cashpoints.address, basefee);
-      const updateCashPoint = cashpoints.updateCashPoint(name, city, phone, currency, buy, sell, newEndTime.toString(), 0);
+      const updateCashPoint = cashpoints.updateCashPoint(
+        name, city, latitude, longitude, accuracy, phone, currency, buy, sell, endtime.toString(), 0
+      );
       await expect(updateCashPoint).to.emit(cashpoints, "UpdatedCashPoint").withArgs(owner.address);
 
     });

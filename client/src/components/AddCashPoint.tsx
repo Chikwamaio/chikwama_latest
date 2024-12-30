@@ -50,7 +50,7 @@ export default function AddCashPoint({open, close, update, add}: Prop) {
 
   const handleAdd = () => {
     handleClose();
-    add(cashPointName,phoneNumber,currency, buyRate, sellRate, duration, feeAmount, latitude, longitude);
+    add(cashPointName,phoneNumber, accuracy, currency, buyRate, sellRate, duration, feeAmount, latitude, longitude);
 
   }
 
