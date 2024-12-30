@@ -2,7 +2,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PhoneIcon from '@mui/icons-material/Phone';
 import { Button, Card, CardActions, CardContent, CardHeader, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fade, Link, TextField, Typography } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
-import { BigNumber, ethers, Transaction, utils } from 'ethers';
+import { ethers, Transaction, utils } from 'ethers';
 import { Feature, Map, View } from 'ol';
 import { defaults as defaultControls } from 'ol/control';
 import { Point } from 'ol/geom';
@@ -18,7 +18,9 @@ import cashPoints from '../../../contracts/artifacts/contracts/Cashpoints.sol/Ca
 import NavBar from './NavBar';
 import AddCashPoint from './AddCashPoint';
 import { setProvider, getSmartWalletAddress, UserDefinedDeployRequest, RelayClient, setEnvelopingConfig, UserDefinedEnvelopingRequest} from '@rsksmart/rif-relay-client';
-import { IForwarder__factory } from '@rsksmart/rif-relay-contracts';
+import {
+  ERC20__factory,
+} from '@rsksmart/rif-relay-contracts';
 //import SendMoney from './SendMoney';
 //import { SocialMediaModal } from './SocialMediaModal';
 
@@ -28,6 +30,7 @@ const CashPoints = () => {
     const [data, getData] = useState<any[]>([]);
     const [isActive, setIsActive] = useState<boolean[]>([]);
     const [walletAddress, setWalletAddress] = useState('');
+    const [smartWalletBalance, setSmartWalletBalance] = useState('');
     const [state, setState] = useState({ open: false, Transition: Fade });
     const [errorMessage, setErrorMessage] = useState('');
     
@@ -260,47 +263,89 @@ const CashPoints = () => {
     }, []);
 
     useEffect(() => {
-        const index = "0";
-        if (provider) {
-          setEnvelopingConfig({
-            logLevel: 1,
-            chainId: parseInt(import.meta.env.VITE_RIF_RELAY_CHAIN_ID),
-            preferredRelays: import.meta.env.VITE_RIF_RELAY_PREFERRED_RELAYS.split(','),
-            relayHubAddress: import.meta.env.VITE_CONTRACTS_RELAY_HUB,
-            deployVerifierAddress: import.meta.env.VITE_CONTRACTS_DEPLOY_VERIFIER,
-            relayVerifierAddress: import.meta.env.VITE_CONTRACTS_RELAY_VERIFIER,
-            smartWalletFactoryAddress: import.meta.env.VITE_CONTRACTS_SMART_WALLET_FACTORY,
-            forwarderAddress: import.meta.env.VITE_CONTRACTS_SMART_WALLET,
-            gasPriceFactorPercent: parseInt(import.meta.env.VITE_RIF_RELAY_GAS_PRICE_FACTOR_PERCENT),
-            relayLookupWindowBlocks: parseInt(import.meta.env.VITE_RIF_RELAY_LOOKUP_WINDOW_BLOCKS),
-          });
-          setProvider(provider);
+      const index = "0";
+      if (provider) {
+        setEnvelopingConfig({
+          logLevel: 1,
+          chainId: parseInt(import.meta.env.VITE_RIF_RELAY_CHAIN_ID),
+          preferredRelays: import.meta.env.VITE_RIF_RELAY_PREFERRED_RELAYS.split(','),
+          relayHubAddress: import.meta.env.VITE_CONTRACTS_RELAY_HUB,
+          deployVerifierAddress: import.meta.env.VITE_CONTRACTS_DEPLOY_VERIFIER,
+          relayVerifierAddress: import.meta.env.VITE_CONTRACTS_RELAY_VERIFIER,
+          smartWalletFactoryAddress: import.meta.env.VITE_CONTRACTS_SMART_WALLET_FACTORY,
+          forwarderAddress: import.meta.env.VITE_CONTRACTS_SMART_WALLET,
+          gasPriceFactorPercent: parseInt(import.meta.env.VITE_RIF_RELAY_GAS_PRICE_FACTOR_PERCENT),
+          relayLookupWindowBlocks: parseInt(import.meta.env.VITE_RIF_RELAY_LOOKUP_WINDOW_BLOCKS),
+        });
+        setProvider(provider);
+        const fetchSmartWalletAddress = async (account: string) => {
+          const smartWalletAddress = await getSmartWalletAddress(account, index);
+          console.log(`Your smart wallet address is ${smartWalletAddress}`);
     
-          const fetchSmartWalletAddress = async (account: string) => {
-            const smartWalletAddress = await getSmartWalletAddress(account, index);
-            console.log(`Your smart wallet address is ${smartWalletAddress}`);
+          const code = await provider.getCode(smartWalletAddress);
+          if (code !== '0x00' && code !== '0x') {
+            console.log('Smart wallet already deployed');
+            setSmartWalletAddress(smartWalletAddress);
+            return;
+          }
     
-            const code = await provider.getCode(smartWalletAddress);
-            if (code !== '0x00' && code !== '0x') {
-              console.log('Smart wallet already deployed');
-              setSmartWalletAddress(smartWalletAddress);
-              return;
-            }
+          deploySmartWallet(index);
+        };
     
-            deploySmartWallet(index);
+        const initialize = async () => {
+          const account = await getProviderWallet();
+          if (account) {
+            await fetchSmartWalletAddress(account);
+          } else {
+            console.error('Failed to get account');
+          }
+        };
+    
+        initialize();
+      }
+      
+    }, [provider]);
+
+    useEffect(() => {
+
+      getCashPoints();
+    }, [smartWalletAddress]);
+
+      useEffect(() => {
+        const getERC20Token = async () => {
+          const tokenAddress = import.meta.env.VITE_TOKEN_CONTRACT;
+          const instance = ERC20__factory.connect(tokenAddress, provider);
+      
+          const [symbol, name, decimals] = await Promise.all([
+            instance.symbol(),
+            instance.name(),
+            instance.decimals(),
+          ]);
+      
+          return {
+            instance,
+            symbol,
+            name,
+            decimals,
           };
+        };
+      
+        const fetchERC20Data = async () => {
+          try {
+            const tokenContract = await getERC20Token(); // Await the result
     
-          const initialize = async () => {
-            const account = await getProviderWallet();
-            if (account) {
-              await fetchSmartWalletAddress(account);
-            } else {
-              console.error('Failed to get account');
-            }
-          };
-    
-          initialize();
-        }
+            const tokenbalance = await tokenContract.instance.balanceOf(smartWalletAddress);
+  
+              const tokenBalanceInDollars = parseFloat(ethers.utils.formatEther(tokenbalance)).toFixed(2);
+              const formattedTokenBalance = tokenBalanceInDollars.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+              setSmartWalletBalance(formattedTokenBalance);
+       
+          } catch (error) {
+            console.error("Error fetching ERC-20 token:", error);
+          }
+        };
+      
+        fetchERC20Data(); // Call the fetch function
       }, [provider]);
 
     const handleClose = () => {
@@ -308,7 +353,7 @@ const CashPoints = () => {
     };
 
     const handleOpenCreate = async () => {
-        const cp = await cashPointsContract.getCashPoint(walletAddress);
+        const cp = await cashPointsContract.getCashPoint(smartWalletAddress);
         setIsCashPoint(cp._isCashPoint);
         setOpenCreate(true);
     };
@@ -317,10 +362,39 @@ const CashPoints = () => {
         setOpenCreate(false);
     };
 
+    const makeApproveCall = async (destinationContract: string, spender: string, fee: string) => {
+        const cost = ethers.utils.parseUnits(fee, "ether");
+        const ApproveData = calculateAbiEncodedFunction(`approve(address spender, uint fee)`, [spender, cost])
+        const swAddress = smartWalletAddress;
+        const tokenAmount = 0;
+
+        const relayTransactionOpts: UserDefinedEnvelopingRequest = {
+          request: {
+            from: account,
+            data: ApproveData,
+            to: destinationContract,
+            tokenAmount,
+            tokenContract: destinationContract,
+          },
+          relayData: {
+            callForwarder: swAddress,
+          },
+        };
+        const relayClient= new RelayClient()
+        console.log(relayClient)
+        const transaction: Transaction = await relayClient.relayTransaction(relayTransactionOpts);
+        setState({
+          open: true,
+          Transition: Fade,
+        });
+
+        setErrorMessage('You have successfully approved the transaction ' + transaction.hash);
+    }
+
 
     const calculateAbiEncodedFunction = (functionName: string, params: any[]) => {
       console.log('getting functiondata')
-
+      
       const funct = functionName.trim()
         const iface = new utils.Interface([`function ${funct}`]);
         return iface.encodeFunctionData(functionName!, params);
@@ -355,7 +429,7 @@ const CashPoints = () => {
       const jsonResponse = await res.json();
       city = jsonResponse.results[0].address_components[2].long_name + ', ' + jsonResponse.results[0].address_components[4].long_name;
       //const cost = ethers.utils.parseUnits(fee, "ether");
-
+      console.log("already registered:", isCashPoint);
       // if(isCashPoint){  
 
       //   const CashPoint = await cashPointsContract.getCashPoint(smartWalletAddress);
@@ -373,11 +447,19 @@ const CashPoints = () => {
       //   return;
       // }
       
-    
-    const params = [cashPointName, city, phoneNumber, currency, buyRate, sellRate, endtime, duration]
+      //const basefee = await cashpoints.BASE_FEE();
+      const destinationContract = import.meta.env.VITE_CONTRACT_ADDRESS;
+      const tokenContract = import.meta.env.VITE_TOKEN_CONTRACT;
+
+      console.log('Approve params:',tokenContract, destinationContract, fee)
+      await makeApproveCall( tokenContract, destinationContract, fee)
+
+      const params = [cashPointName, city, phoneNumber, currency, buyRate, sellRate, endtime.toString(), duration]
+   
+
     const funcData = calculateAbiEncodedFunction('addCashPoint(string name, string  city, string  phone, string currency, uint buy, uint sell, string endtime, uint duration)', params)
-      
-    const destinationContract = import.meta.env.VITE_CONTRACT_ADDRESS;
+    //addCashPoint(name, city, phone, currency, buy, sell, endtime.toString(), duration)
+    
     const swAddress = smartWalletAddress;
       //const addCashPoint = await cashPointsContract.addCashPoint(cashPointName, city, phoneNumber, currency, buyRate, sellRate, endtime.toString(), duration, { value: cost});
     // await estimateDirectExecution(
@@ -393,14 +475,14 @@ const CashPoints = () => {
             data: funcData,
             to: destinationContract,
             tokenAmount,
-            tokenContract: import.meta.env.VITE_TOKEN_CONTRACT,
+            tokenContract: tokenContract,
           },
           relayData: {
             callForwarder: swAddress,
           },
         };
     const relayClient= new RelayClient()
-
+        console.log(relayClient)
     const transaction: Transaction = await relayClient.relayTransaction(relayTransactionOpts);
       setState({
         open: true,
@@ -416,7 +498,14 @@ const CashPoints = () => {
       };
 
     const getCashPoints = async () => {
-        
+      console.log('line 454:',smartWalletAddress)
+      try {
+        const checkIfRegistered = await cashPointsContract.cashpoints(smartWalletAddress);
+        setIsCashPoint(checkIfRegistered._isCashPoint);
+
+    } catch (error) {
+        console.error("Error fetching cashpoint:", error);
+    }
         if (!ethereum) {
             alert('please install metamask');
         } else {
@@ -427,7 +516,7 @@ const CashPoints = () => {
 
             let NumberOfCashPointsTXN = await cashPointsContract.count();
             let count = NumberOfCashPointsTXN.toNumber();
-
+            console.log('number of cashpoints:', count);
             let cashPoints = [];
             let active = [];
             for (let i = 1; i <= count; i++) {
@@ -436,16 +525,16 @@ const CashPoints = () => {
                 let now = new Date();
                 let cpDate = new Date(CashPoint._endTime);
                 active.push(cpDate >= now);
+                console.log(CashPoint)
                 cashPoints.push(CashPoint);
             }
             setIsActive(active);
             getData(cashPoints);
+            
         }
     }
 
-    useEffect(() => {
-        getCashPoints();
-    }, []);
+
 
     // Modal to capture user email and location
     const handleEmailModalOpen = () => {
@@ -477,7 +566,7 @@ const CashPoints = () => {
 
     return (
         <div className='min-h-screen flex flex-col text-slate-500'>
-            <NavBar walletAddress={smartWalletAddress} eoa={account} />
+            <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance} />
             
             <Snackbar 
       anchorOrigin={{

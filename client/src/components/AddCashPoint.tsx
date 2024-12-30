@@ -58,7 +58,7 @@ export default function AddCashPoint({open, close, update, add}: Prop) {
   const getCostHandler = async (Duration: number) => {
     setLoading(true);
     const fee = await cashPointsContract.CASHPOINT_FEE();
-    let cost = ((parseInt(fee.toString())) * Duration).toString();
+    const cost = fee.mul(Duration); 
    
     setFee(ethers.utils.formatEther(cost));
     setLoading(false);

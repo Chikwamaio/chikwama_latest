@@ -11,11 +11,14 @@ import cashPoints from '../../../contracts/artifacts/contracts/Cashpoints.sol/Ca
 import Footer from './Footer.tsx';
 import NavBar from './NavBar.tsx';
 import { setProvider, getSmartWalletAddress, UserDefinedDeployRequest, RelayClient, setEnvelopingConfig} from '@rsksmart/rif-relay-client';
-
+import {
+  ERC20__factory,
+} from '@rsksmart/rif-relay-contracts';
 
 const Home = () => {
     const [revenue, setRevenue] = useState("")
-    const [tokenBalance, setTokenBalance] = useState("")
+    const [tokenBalance, setTokenBalance] = useState("");
+    const [smartWalletBalance, setSmartWalletBalance] = useState("")
     const [tokenPrice, setTokenPrice] = useState<number>(0)
     const navigate = useNavigate();
     const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
@@ -151,13 +154,6 @@ const Home = () => {
 
       const TokenPrice = await cashPointsContract.PRICE_PER_TOKEN();
       setTokenPrice(parseFloat(parseFloat(ethers.utils.formatEther(TokenPrice.toNumber())).toFixed(4)));
-
-
-      provider.getBalance(contractAddress).then((balance) => {
-        const balanceInDai = parseFloat(ethers.utils.formatEther(balance)).toFixed(2);
-        const formattedBalance = balanceInDai.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        setRevenue(formattedBalance);
-    });
     
    }
 
@@ -285,15 +281,52 @@ const Home = () => {
 
 
   useEffect(() => {
-    checkWalletIsConnected();
+    const getERC20Token = async () => {
+      const tokenAddress = import.meta.env.VITE_TOKEN_CONTRACT;
+      const instance = ERC20__factory.connect(tokenAddress, provider);
+  
+      const [symbol, name, decimals] = await Promise.all([
+        instance.symbol(),
+        instance.name(),
+        instance.decimals(),
+      ]);
+  
+      return {
+        instance,
+        symbol,
+        name,
+        decimals,
+      };
+    };
+  
+    const fetchERC20Data = async () => {
+      try {
+        const tokenContract = await getERC20Token(); // Await the result
+        const balance = await tokenContract.instance.balanceOf(contractAddress);
 
+        const tokenbalance = await tokenContract.instance.balanceOf(smartWalletAddress);
+
+          const balanceInDollars = parseFloat(ethers.utils.formatEther(balance)).toFixed(2);
+          const formattedBalance = balanceInDollars.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          setRevenue(formattedBalance);
+
+          const tokenBalanceInDollars = parseFloat(ethers.utils.formatEther(tokenbalance)).toFixed(2);
+          const formattedTokenBalance = tokenBalanceInDollars.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          setSmartWalletBalance(formattedTokenBalance);
     
-  }, [])
+        checkWalletIsConnected();
+      } catch (error) {
+        console.error("Error fetching ERC-20 token:", error);
+      }
+    };
+  
+    fetchERC20Data(); // Call the fetch function
+  }, [provider]);
 
   return (
     
     <div className='container w-full h-screen text-slate-500'>
-    <NavBar walletAddress={smartWalletAddress} eoa={account}/>
+    <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance}/>
       <main className='flex flex-grow w-full md:pt-24 pt-24 min-h-max'>
       <div className='basis-1/2 pr-4'>
       <h2 className='md:text-3xl text-3xl text-slate-700 lg:text-6xl uppercase'> Welcome to</h2>
@@ -308,7 +341,7 @@ const Home = () => {
     <h4 className='text-xl text-slate-700 lg:text-2xl uppercase text-left'> DAO Metrics:</h4>
     <div className='bg-white rounded-md mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative  z-30'>
         <CalculateIcon />
-        <p className='text-xl text-yellow-400 text-left'>US$ {tokenPrice}</p> 
+        <p className='text-xl text-yellow-400 text-left' style={{ fontFamily: 'Digital-7, monospace' }}>US$ {tokenPrice}</p> 
         <p className='text-left'>Current Price</p>
         <div className='absolute top-1 right-1 group'>
             <span className='text-gray-400 cursor-pointer'><HelpOutlineIcon/></span>
@@ -320,7 +353,7 @@ const Home = () => {
     
     <div className='bg-white rounded-md mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative z-10'>
         <PieChartIcon />
-        <p className='text-xl text-yellow-400 text-left'>{tokenBalance} CHK</p> 
+        <p className='text-xl text-yellow-400 text-left' style={{ fontFamily: 'Digital-7, monospace' }}>{tokenBalance} CHK</p> 
         <p className='text-left'>Your Balance</p>
         <div className='absolute top-1 right-1 group'>
             <span className='text-gray-400 cursor-pointer'><HelpOutlineIcon/></span>
@@ -332,7 +365,7 @@ const Home = () => {
     
     <div className='bg-white rounded-md mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative'>
         <AccountBalanceIcon />
-        <p className='text-xl text-yellow-400 text-left'>US$ {revenue}</p> 
+        <p className='text-xl text-yellow-400 text-left' style={{ fontFamily: 'Digital-7, monospace' }}>US$ {revenue}</p> 
         <p className='text-left'>Contract Balance</p>
         <div className='absolute top-1 right-1 group'>
             <span className='text-gray-400 cursor-pointer'><HelpOutlineIcon/></span>

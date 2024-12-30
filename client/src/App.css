@@ -39,3 +39,8 @@
 .read-the-docs {
   color: #888;
 }
+
+@font-face {
+  font-family: 'Digital-7';
+  src: url('/path-to-font/Digital-7.ttf') format('truetype');
+}
