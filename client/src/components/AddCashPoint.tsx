@@ -19,7 +19,7 @@ type Prop = {
   open: boolean;
   close: () => void;
   update: boolean;
-  add: (cashPointName: any,phoneNumber: any,currency: any, buyRate: any, sellRate: any, duration: any, feeAmount: any, latitude: any, longitude: any) => void;
+  add: (cashPointName: any,phoneNumber: any, accuracy: any, currency: any, buyRate: any, sellRate: any, duration: any, feeAmount: any, latitude: any, longitude: any) => void;
 };
 
 export default function AddCashPoint({open, close, update, add}: Prop) {
@@ -138,7 +138,7 @@ export default function AddCashPoint({open, close, update, add}: Prop) {
           }}
         >
             {currencies.map(({cc,symbol, name}, index) => (
-            <MenuItem key={index} value={`${symbol} - ${name}`}>
+            <MenuItem key={index} value={`${cc},${symbol} - ${name}`}>
               {cc} - {name}
             </MenuItem>
           ))}

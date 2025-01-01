@@ -4,7 +4,7 @@ import IconButton from '@mui/material/IconButton';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { useState } from 'react';
 import chikwamaLogo from '../assets/Icon100.png';
-
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 type Prop = {
   walletAddress: string;
   eoa: string;
@@ -68,7 +68,7 @@ const NavBar = ({ walletAddress, eoa, tokenBalance }: Prop) => {
             <ul className={`md:flex md:items-center md:pb-0 pb-12 absolute md:static bg-white md:z-auto z-[-1] left-0 w-full md:w-auto md:pl-0 pl-9 md:pt-0 pt-6 transition-all duration-500 ease-in ${menuOpen ? 'top-20 opacity-100' : 'top-[-490] md:opacity-100 opacity-0'}`}>
               <li className="cursor-pointer md:mt-5 mt-2 mr-3 hover:text-fuchsia-700"><a href='/cashpoints'>Cashpoints</a></li>
               <li className="cursor-pointer md:mt-5 mt-2 mr-3 hover:text-fuchsia-700"><a href='/dao'>DAO</a></li>
-              <div className='w-fit'>
+              <div className='w-fit '>
               {/* Token balance displayed here */}
               <li className="cursor-pointer md:mt-0 mt-2 mr-3 text-yellow-400" style={{ fontFamily: 'Digital-7, monospace' }}>
                 {tokenBalance ? `Balance: $${tokenBalance}` : "Loading..."}
@@ -77,8 +77,9 @@ const NavBar = ({ walletAddress, eoa, tokenBalance }: Prop) => {
               {/* Connect button */}
               <button
                 onClick={() => connectWalletHandler(address)}
-                className="text-white w-[160px] truncate md:mt-0 bg-[#872A7F] py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-fuchsia-700 hover:border hover:border-fuchsia-700 focus:outline-none focus:ring"
+                className="text-white w-[180px] truncate md:mt-0 bg-[#872A7F] py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-fuchsia-700 hover:border hover:border-fuchsia-700 focus:outline-none focus:ring"
               >
+                {<AccountBalanceWalletIcon className='mb-1 mr-2 ml-0'/>} 
                 {address.length > 0 ? address : "Connect"}
               </button>
 

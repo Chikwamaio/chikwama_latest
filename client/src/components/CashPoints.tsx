@@ -1,6 +1,7 @@
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PhoneIcon from '@mui/icons-material/Phone';
-import { Button, Card, CardActions, CardContent, CardHeader, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fade, Link, TextField, Typography } from '@mui/material';
+import {  Box, Button, Card, CardActions, CardContent, CardHeader, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fade, Link, TextField, Typography } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
 import { ethers, Transaction, utils } from 'ethers';
 import { Feature, Map, View } from 'ol';
@@ -21,7 +22,7 @@ import { setProvider, getSmartWalletAddress, UserDefinedDeployRequest, RelayClie
 import {
   ERC20__factory,
 } from '@rsksmart/rif-relay-contracts';
-//import SendMoney from './SendMoney';
+import SendMoney from './SendMoney';
 //import { SocialMediaModal } from './SocialMediaModal';
 
 const CashPoints = () => {
@@ -33,6 +34,8 @@ const CashPoints = () => {
     const [smartWalletBalance, setSmartWalletBalance] = useState('');
     const [state, setState] = useState({ open: false, Transition: Fade });
     const [errorMessage, setErrorMessage] = useState('');
+    const [username, setUsername] = useState('');
+  
     
     // State for the email modal
     const [openEmailModal, setOpenEmailModal] = useState(false);
@@ -187,7 +190,7 @@ const CashPoints = () => {
 
     
         cps.forEach((cp) => {
-
+          console.log(cp);
           const lat = parseFloat(ethers.utils.formatEther(cp[2] || "0")); // Handle undefined or invalid values
           const long = parseFloat(ethers.utils.formatEther(cp[3] || "0"));
           const buyRate = parseFloat((cp[7] || "0")).toFixed(2);
@@ -197,7 +200,7 @@ const CashPoints = () => {
 
           const CashPoint = new Feature({
             geometry: new Point(fromLonLat(coords)),
-            name: cp.cashPointName,
+            name: cp[0],
             address: cp.address,
             phoneNumber: cp[5],
             currency: cp._currency,
@@ -340,13 +343,13 @@ const CashPoints = () => {
         const fetchERC20Data = async () => {
           try {
             const tokenContract = await getERC20Token(); // Await the result
-    
+            
             const tokenbalance = await tokenContract.instance.balanceOf(smartWalletAddress);
   
               const tokenBalanceInDollars = parseFloat(ethers.utils.formatEther(tokenbalance)).toFixed(2);
               const formattedTokenBalance = tokenBalanceInDollars.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
               setSmartWalletBalance(formattedTokenBalance);
-       
+ 
           } catch (error) {
             console.error("Error fetching ERC-20 token:", error);
           }
@@ -423,13 +426,11 @@ const CashPoints = () => {
       // };
 
     async function createCashPointHandler(cashPointName: any, phoneNumber: any, accuracy: any, currency: any, buyRate: any, sellRate: any, duration: number, fee: string, lat: any, long: any): Promise<void> {
-      
-      console.log(accuracy, lat, long);
+
       const now = new Date();
       const endtime =  new Date(now.setDate(now.getDate() + duration));
     
       let city;
-
 
       var requestOptions = {
         method: 'GET',
@@ -542,7 +543,10 @@ const CashPoints = () => {
                 let now = new Date();
                 let cpDate = new Date(CashPoint._endTime);
                 active.push(cpDate >= now);
-                registeredCashPoints.push(CashPoint);
+                registeredCashPoints.push({
+                  ...CashPoint,
+                  address: CashPointAddress,
+              });
             }
             setIsActive(active);
             getData(registeredCashPoints);
@@ -579,6 +583,11 @@ const CashPoints = () => {
         }
     };
 
+    useEffect(() => {
+      const result = data.find(item => item.address === smartWalletAddress);
+      if(result) setUsername(result[0]);
+    },[data])
+
     return (
         <div className='min-h-screen flex flex-col text-slate-500'>
             <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance} />
@@ -599,40 +608,76 @@ const CashPoints = () => {
             <main className='text-black container mx-auto pt-16 flex-1 text-left'>
             
                     <h4 className='text-xl text-slate-700 lg:text-2xl uppercase text-left py-6'>Find a cashpoint:</h4>
-                   
+                    {isCashPoint && <p className='text-slate-700 mb-2'>Welcome back! You're signed in as {username} cashpoint.</p>}
             <div id="map" ref={mapRef} style={{ width: '100%', height: '500px' }} />
             <div className="flex justify-center">
-                <Button className="z-100 text-white bg-[#872A7F] mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring" onClick={handleOpenCreate}>
-                    Become A Cashpoint
-                </Button>
+                <button className="z-100 text-white bg-[#872A7F] mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring" onClick={handleOpenCreate}>
+                    {isCashPoint?"Update cashpoint details":"Become A Cashpoint"}
+                </button>
+                {isCashPoint &&<button className="z-100 text-white bg-[#872A7F] ml-2 mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring">Sell Dollars</button>}
             </div>
-                {currentCashPoint && cardPosition && (
-                <Card sx={{ maxWidth: 500, position: 'absolute', top: cardPosition.top, left: cardPosition.left, zIndex: 1000 }}>
-                    <CardHeader title={currentCashPoint.name} />
-                    <CardContent>
-                        <Typography>
-                            <LocationOnIcon /> {currentCashPoint.city}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Currency: {currentCashPoint.currency}
-                        </Typography>
-                        <Typography variant="body2">
-                            Buy: {currentCashPoint.buyRate} Sell: {currentCashPoint.sellRate}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Valid Until: {currentCashPoint.until}
-                        </Typography>
-                        <Typography variant="body2">
-                            <PhoneIcon /> {currentCashPoint.phoneNumber}
-                        </Typography>
-                    </CardContent>
-                    <CardActions>
-                        <Button size="small" onClick={() => setOpenSend(true)}>Withdraw</Button>
-                    </CardActions>
-                </Card>
+{currentCashPoint && cardPosition && (
+  <Card 
+  sx={{ 
+    maxWidth: 400, 
+    position: 'absolute', 
+    top: cardPosition.top, 
+    left: cardPosition.left, 
+    zIndex: 1000, 
+    boxShadow: '0px 4px 15px rgba(0, 0, 0, 0.2)', 
+    borderRadius: 3, 
+    padding: 2 
+  }}
+>
+  <CardHeader
+
+  title={currentCashPoint.name}
+/>
+  <CardContent>
+  <Box sx={{ textAlign: 'center', marginBottom: 2 }}>
+      <img
+        src="/cp_image.jpg"
+        alt="Chikwama Cashpoint Sticker"
+        style={{ width: '100%', maxWidth: '350px', borderRadius: 5 }}
+      />
+    </Box>
+    <Typography>
+      <LocationOnIcon /> {' '}
+      <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.city}</span>
+    </Typography>
+    <Typography variant="body2" color="text.secondary">
+      <span>Currency:</span>{' '}
+      <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.currency}</span>
+    </Typography>
+    <Typography variant="body2">
+      <span>Buy:</span>{' '}
+      <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.buyRate}</span>{' '}
+      <span>Sell:</span>{' '}
+      <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.sellRate}</span>
+    </Typography>
+    <Typography variant="body2" color="text.secondary">
+      
+      <span>Valid Until:</span>{' '}
+      <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.until}</span>
+    </Typography>
+    <Typography variant="body2">
+      <PhoneIcon /> {' '}
+      <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.phoneNumber}</span>
+    </Typography>
+  </CardContent>
+  <CardActions>
+  <button 
+    className="text-white bg-[#872A7F] py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring"
+    onClick={() => {setOpenSend(true); }}
+  >{<AccountBalanceWalletIcon />} 
+    Withdraw
+  </button>
+  </CardActions>
+</Card>
             )}
             
        <AddCashPoint open={openCreate} close={closeCreate} update={isCashPoint} add={createCashPointHandler}></AddCashPoint>
+       <SendMoney open={openSend} close={closeSend} send={sendMoneyHandler} cashPoint={currentCashPoint} swAddress={smartWalletAddress} account={account}></SendMoney>
                 <div className='my-4'>
                     <Link className='text-[#872A7F] ' color="inherit" component='button' onClick={handleEmailModalOpen}>
                         Can’t find a cash point at your desired location?
@@ -668,8 +713,8 @@ const CashPoints = () => {
                         />
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={handleEmailModalClose}>Cancel</Button>
-                        <Button onClick={handleEmailSubmit}>Submit</Button>
+                        <button onClick={handleEmailModalClose}>Cancel</button>
+                        <button onClick={handleEmailSubmit}>Submit</button>
                     </DialogActions>
                 </Dialog>
  
