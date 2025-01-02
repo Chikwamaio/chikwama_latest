@@ -189,8 +189,7 @@ const CashPoints = () => {
         const cps = data;
 
     
-        cps.forEach((cp) => {
-          console.log(cp);
+        cps.forEach((cp, index) => {
           const lat = parseFloat(ethers.utils.formatEther(cp[2] || "0")); // Handle undefined or invalid values
           const long = parseFloat(ethers.utils.formatEther(cp[3] || "0"));
           const buyRate = parseFloat((cp[7] || "0")).toFixed(2);
@@ -219,7 +218,10 @@ const CashPoints = () => {
               }),
             })
           );
+          console.log(cp, isActive[index]);
+          if(isActive[index]){
           vectorSource.addFeature(CashPoint);
+          }
         });
     
         const vectorLayer = new VectorLayer({
@@ -410,26 +412,24 @@ const CashPoints = () => {
         return iface.encodeFunctionData(functionName!, params);
       };
 
-      // async function estimateDirectExecution(
-      //   swAddress: string,
-      //   toAddress: string,
-      //   abiEncodedTx: string
-      // ): Promise<BigNumber> {
-      //   const iForwarder = IForwarder__factory.connect(swAddress, provider!);
-    
-      //   const estimate = await iForwarder.estimateGas.directExecute(
-      //     toAddress,
-      //     abiEncodedTx
-      //   );
-      //   console.log(estimate)
-      //   return estimate;
-      // };
+  
 
     async function createCashPointHandler(cashPointName: any, phoneNumber: any, accuracy: any, currency: any, buyRate: any, sellRate: any, duration: number, fee: string, lat: any, long: any): Promise<void> {
 
+      const basefee = await cashPointsContract.BASE_FEE();
+      const destinationContract = import.meta.env.VITE_CONTRACT_ADDRESS;
+      const tokenContract = import.meta.env.VITE_TOKEN_CONTRACT;
+      const mylat = lat.toString();
+      const mylong = long.toString();
+      const myAccuracy = accuracy.toString();
       const now = new Date();
-      const endtime =  new Date(now.setDate(now.getDate() + duration));
+      const scaledLat= ethers.utils.parseUnits(mylat, "ether");
+      const scaledLong = ethers.utils.parseUnits(mylong, "ether");
+      const scaledAccuracy = ethers.utils.parseUnits(myAccuracy, "ether");
     
+      const swAddress = smartWalletAddress;
+      const tokenAmount = 0;
+
       let city;
 
       var requestOptions = {
@@ -440,54 +440,55 @@ const CashPoints = () => {
       city = jsonResponse.results[0].address_components[2].long_name + ', ' + jsonResponse.results[0].address_components[4].long_name;
       //const cost = ethers.utils.parseUnits(fee, "ether");
       console.log("already registered:", isCashPoint);
-      // if(isCashPoint){  
+      if(isCashPoint){  
+        const formatedBaseFee = ethers.utils.formatEther(basefee);
 
-      //   const CashPoint = await cashPointsContract.getCashPoint(smartWalletAddress);
-      //   const currentEndtime = new Date(Date.parse(CashPoint._endTime));
-      //   const now = new Date()
-      //   const IsActive = currentEndtime > now;
-      //   const newEndtime = IsActive ? new Date(currentEndtime.setDate(currentEndtime.getDate() + duration)) : new Date(now.setDate(now.getDate() + duration));
-      //   if(city){
-      //   const updateCashPoint = await cashPointsContract.updateCashPoint(cashPointName, city, phoneNumber, currency, buyRate, sellRate, newEndtime.toString(), duration, { value: cost});
+        await makeApproveCall( tokenContract, destinationContract, duration==0?formatedBaseFee:fee)
 
-      //   return;  
-      // }
+        const CashPoint = await cashPointsContract.getCashPoint(smartWalletAddress);
+        const currentEndtime = new Date(Date.parse(CashPoint._endTime));
+        const IsActive = currentEndtime > now;
+        const newEndtime = IsActive ? new Date(currentEndtime.setDate(currentEndtime.getDate() + duration)) : new Date(now.setDate(now.getDate() + duration));
+        if(city){
+          const params = [cashPointName, city, scaledLat, scaledLong, scaledAccuracy, phoneNumber, currency, buyRate, sellRate, newEndtime.toString(), duration]
+          const funcData = calculateAbiEncodedFunction('updateCashPoint(string name, string  city, int256 latitude, int256 longitude, uint accuracy, string  phone, string currency, uint buy, uint sell, string endtime, uint duration)', params);
 
-      // console.log('failed to access your location');
-      //   return;
-      // }
+          const relayTransactionOpts: UserDefinedEnvelopingRequest = {
+            request: {
+              from: account,
+              data: funcData,
+              to: destinationContract,
+              tokenAmount,
+              tokenContract: tokenContract,
+            },
+            relayData: {
+              callForwarder: swAddress,
+            },
+          };
+          const relayClient= new RelayClient();
+
+          const transaction: Transaction = await relayClient.relayTransaction(relayTransactionOpts);
+          setState({
+            open: true,
+            Transition: Fade,
+          });
+          setErrorMessage(`You have successfully updated ${CashPoint.name} cash point ` + transaction);
+        
+        return;  
+        }
+        console.log('failed to access your location');
+        return;
+      }
       
-      //const basefee = await cashpoints.BASE_FEE();
-      const destinationContract = import.meta.env.VITE_CONTRACT_ADDRESS;
-      const tokenContract = import.meta.env.VITE_TOKEN_CONTRACT;
 
-      console.log('Approve params:',tokenContract, destinationContract, fee)
+      const endtime =  new Date(now.setDate(now.getDate() + duration));
       await makeApproveCall( tokenContract, destinationContract, fee)
 
-
-      const mylat = lat.toString();
-      const mylong = long.toString();
-      const myAccuracy = accuracy.toString();
-
-      const scaledLat= ethers.utils.parseUnits(mylat, "ether");
-      const scaledLong = ethers.utils.parseUnits(mylong, "ether");
-      const scaledAccuracy = ethers.utils.parseUnits(myAccuracy, "ether");
- 
       const params = [cashPointName, city, scaledLat, scaledLong, scaledAccuracy, phoneNumber, currency, buyRate, sellRate, endtime.toString(), duration]
-   
+      const funcData = calculateAbiEncodedFunction('addCashPoint(string name, string  city, int256 latitude, int256 longitude, uint accuracy, string  phone, string currency, uint buy, uint sell, string endtime, uint duration)', params)
 
-    const funcData = calculateAbiEncodedFunction('addCashPoint(string name, string  city, int256 latitude, int256 longitude, uint accuracy, string  phone, string currency, uint buy, uint sell, string endtime, uint duration)', params)
-    //addCashPoint(name, city, phone, currency, buy, sell, endtime.toString(), duration)
     
-    const swAddress = smartWalletAddress;
-      //const addCashPoint = await cashPointsContract.addCashPoint(cashPointName, city, phoneNumber, currency, buyRate, sellRate, endtime.toString(), duration, { value: cost});
-    // await estimateDirectExecution(
-    //     swAddress,
-    //     destinationContract,
-    //     funcData
-    //   );
 
-    const tokenAmount = 0;
         const relayTransactionOpts: UserDefinedEnvelopingRequest = {
           request: {
             from: account,
@@ -501,7 +502,7 @@ const CashPoints = () => {
           },
         };
     const relayClient= new RelayClient()
-        console.log(relayClient)
+
     const transaction: Transaction = await relayClient.relayTransaction(relayTransactionOpts);
       setState({
         open: true,
@@ -612,7 +613,7 @@ const CashPoints = () => {
             <div id="map" ref={mapRef} style={{ width: '100%', height: '500px' }} />
             <div className="flex justify-center">
                 <button className="z-100 text-white bg-[#872A7F] mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring" onClick={handleOpenCreate}>
-                    {isCashPoint?"Update cashpoint details":"Become A Cashpoint"}
+                    {isCashPoint?"Update cashpoint details":"Become a cashpoint"}
                 </button>
                 {isCashPoint &&<button className="z-100 text-white bg-[#872A7F] ml-2 mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring">Sell Dollars</button>}
             </div>
