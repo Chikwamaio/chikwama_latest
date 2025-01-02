@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import "hardhat/console.sol";
 
 contract CashPoints is ERC20 {
     struct CashPoint {
@@ -34,7 +34,7 @@ contract CashPoints is ERC20 {
     uint public AVAILABLE_TOKENS;
     uint public PRICE_PER_TOKEN; //erc20 token price
     uint public CASHPOINT_FEE = 0.5 ether;
-    uint public BASE_FEE = 1 ether;
+    uint public BASE_FEE = 1;
     uint public TRANSACTION_COMMISION = 1; //percentage commission on transactions routed through the contract
     uint public count = 0;
     bool public reentrancyLock = false; // Added reentrancyLock
@@ -156,17 +156,16 @@ contract CashPoints is ERC20 {
     }
     
     function send(uint _amount, address _to) external nonReentrant{
-      uint fee = (TRANSACTION_COMMISION/100) * _amount;
-      uint total = fee + _amount;
-              require(
+      uint fee = (TRANSACTION_COMMISION * _amount)/100;
+      uint total = _amount + fee;
+      require(
             DollarToken.allowance(msg.sender, address(this)) >= total, 
-            "Insufficient allowance for transfer and fee"
+            'Insufficient allowance for transfer and fee you need '
         );
-      bool success = DollarToken.transferFrom(msg.sender, address(this), _amount);
+      bool success = DollarToken.transferFrom(msg.sender, address(this), total);
       require(success, "Token transfer failed");
-      transferDollarTokens(payable(_to), _amount);
+      transferDollarTokens(_to, _amount);
       setPrice(); 
     }
 
-   
 }

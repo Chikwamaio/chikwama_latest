@@ -161,7 +161,7 @@ useEffect(() => {
     <span className="text-left">You will receive: </span>
     {cashPoint && 
     <span className="text-right" style={{ fontFamily: 'Digital-7, monospace' }}>
-      {(cashPoint?.currency).split('-')[0].trim()}
+      {(cashPoint?.currency).split(',')[0].trim()}
       {new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,

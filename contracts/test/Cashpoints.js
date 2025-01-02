@@ -5,6 +5,7 @@ const {
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect, assert } = require("chai");
 require('dotenv').config();
+const { BigNumber } = require('ethers');
 
 describe("Cashpoints", function () {
   // We define a fixture to reuse the same setup in every test.
@@ -211,21 +212,22 @@ describe("Cashpoints", function () {
     });
 
     it("Should let users route transfers through the contract for a fee", async function () {
-      const { cashpoints, owner, addr1, addr2, initialSupply, dollarToken } = await loadFixture(deployCashpointsContract);
-      
-      const amount = ethers.utils.parseUnits("10", "ether");
-      await dollarToken.transfer(cashpoints.address, amount);
+      const { cashpoints, owner, addr1, addr2, dollarToken } = await loadFixture(deployCashpointsContract);
 
-      const fee = await cashpoints.TRANSACTION_COMMISION();
-      // Calculate the fee as a percentage of the amount
-      let cost = fee.div(100).mul(amount);
-      let total = amount.add(cost);
+      const amount = ethers.utils.parseUnits("20", "ether");
+      await dollarToken.transfer(cashpoints.address, amount);
+    
+      const percentageFeeWei = await cashpoints.TRANSACTION_COMMISION();
+      const percentageFee = ethers.utils.formatEther(percentageFeeWei, "ether"); 
+      const fee =(percentageFee/100)*amount; 
+      const formattedFee = ethers.utils.parseUnits(fee.toString(), "ether");
+      const total = amount.add(formattedFee); 
+      console.log("TC:", total);
     
       // Approve the contract to spend the total amount (amount + fee)
       await dollarToken.approve(cashpoints.address, total);
-    
-  
-    
+      const allowance = await dollarToken.allowance(owner.address, cashpoints.address);
+      console.log('allowance',allowance);
       // Check the balances before and after the transaction
       const ownerBalanceBefore = await dollarToken.balanceOf(owner.address);
       const addr2BalanceBefore = await dollarToken.balanceOf(addr2.address);
@@ -233,14 +235,17 @@ describe("Cashpoints", function () {
     
       // Perform the transfer
       await cashpoints.send(amount, addr2.address);
-    
+      
       const ownerBalanceAfter = await dollarToken.balanceOf(owner.address);
       const addr2BalanceAfter = await dollarToken.balanceOf(addr2.address);
       const contractBalanceAfter = await dollarToken.balanceOf(cashpoints.address);
+    
       // Check if the balances changed as expected
       expect(ownerBalanceBefore.sub(ownerBalanceAfter)).to.equal(total);
       expect(addr2BalanceAfter.sub(addr2BalanceBefore)).to.equal(amount);
-      expect(contractBalanceAfter.sub(contractBalanceBefore)).to.equal(cost);
+      expect(contractBalanceAfter.sub(contractBalanceBefore)).to.equal(formattedFee);
+      console.log("Contract balance before:", contractBalanceBefore.toString());
+      console.log("Contract balance after:", contractBalanceAfter.toString());
     });
 
     

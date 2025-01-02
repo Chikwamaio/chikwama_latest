@@ -1,7 +1,7 @@
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PhoneIcon from '@mui/icons-material/Phone';
-import {  Box, Button, Card, CardActions, CardContent, CardHeader, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fade, Link, TextField, Typography } from '@mui/material';
+import {  Box, Card, CardActions, CardContent, CardHeader, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fade, Link, TextField, Typography } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
 import { ethers, Transaction, utils } from 'ethers';
 import { Feature, Map, View } from 'ol';
@@ -23,14 +23,13 @@ import {
   ERC20__factory,
 } from '@rsksmart/rif-relay-contracts';
 import SendMoney from './SendMoney';
-//import { SocialMediaModal } from './SocialMediaModal';
+import { SocialMediaModal } from './SocialMediaModal';
 
 const CashPoints = () => {
     const [openCreate, setOpenCreate] = useState(false);
     const [isCashPoint, setIsCashPoint] = useState(false);
     const [data, getData] = useState<any[]>([]);
     const [isActive, setIsActive] = useState<boolean[]>([]);
-    const [walletAddress, setWalletAddress] = useState('');
     const [smartWalletBalance, setSmartWalletBalance] = useState('');
     const [state, setState] = useState({ open: false, Transition: Fade });
     const [errorMessage, setErrorMessage] = useState('');
@@ -46,9 +45,10 @@ const CashPoints = () => {
     const ethereum = (window as any).ethereum;
     const provider = new ethers.providers.Web3Provider(ethereum);
     const signer = provider.getSigner();
-    const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+    const tokenContract = import.meta.env.VITE_TOKEN_CONTRACT;
+    const ChikwamaContractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
     const emailScriptURL = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_WEB_APP_URL;
-    const cashPointsContract = new ethers.Contract(contractAddress, abi, signer);
+    const cashPointsContract = new ethers.Contract(ChikwamaContractAddress, abi, signer);
     const [cardPosition, setCardPosition] = useState<{ top: number; left: number } | null>(null);
     const [openSend, setOpenSend] = useState(false);
     interface CashPoint {
@@ -96,7 +96,7 @@ const CashPoints = () => {
               request: {
                 from: account!,
                 tokenAmount,
-                tokenContract: import.meta.env.VITE_CONTRACTS_TOKEN,
+                tokenContract: tokenContract,
                 index: Number(index),
               },
             };
@@ -134,15 +134,15 @@ const CashPoints = () => {
       setOpenSend(false);
     };
     const sendMoneyHandler = async (amount: string, fee: string, gasFee: string) => {
-    
-      const balance = await provider.getBalance(walletAddress);
+      
+      const balance = ethers.utils.parseUnits(smartWalletBalance, "ether");;
       const address = currentCashPoint?.address;
       const amountEther = ethers.utils.parseUnits(amount, "ether");
       const feeEther = ethers.utils.parseUnits(fee, "ether");
       const gasFeeEther = ethers.utils.parseUnits(gasFee, "ether");
       const totalCost = amountEther.add(feeEther).add(gasFeeEther);
 
-
+      
       const message = `I just converted my crypto dollars to money I can use here in Blantyre, Malawi, thanks to Chikwama! Check it out at https://chikwama.net or follow @chikwamaio.`;
       setShareMessage(message);
       setOpenSocialModal(true);
@@ -155,21 +155,42 @@ const CashPoints = () => {
         setErrorMessage(
           `You have less than $${ethers.utils.formatEther(
             totalCost
-          )} in your wallet ${walletAddress}`
+          )} in your wallet ${smartWalletAddress}`
         );
         return;
       }
     
       try {
-        const sendXdai = await cashPointsContract.send(amountEther, address, {
-          value: ethers.BigNumber.from(totalCost.toString()),
-        });
-    
-        setState({
-          open: true,
-          Transition: Fade,
-        });
-        setErrorMessage(`Transaction successful: ${sendXdai.toString()}`);
+
+        await makeApproveCall( tokenContract, ChikwamaContractAddress, ethers.utils.formatEther(totalCost))
+      
+          const params = [amountEther, address]
+          const funcData = calculateAbiEncodedFunction('send(uint amount,address _to)', params);
+
+          const relayTransactionOpts: UserDefinedEnvelopingRequest = {
+            request: {
+              from: account,
+              data: funcData,
+              to: ChikwamaContractAddress,
+              tokenAmount: 0,
+              tokenContract: tokenContract,
+            },
+            relayData: {
+              callForwarder: smartWalletAddress,
+            },
+          };
+          const relayClient= new RelayClient();
+
+          const transaction: Transaction = await relayClient.relayTransaction(relayTransactionOpts);
+          setState({
+            open: true,
+            Transition: Fade,
+          });
+          setErrorMessage(`You have successfully sent $${amount} to ${address} transactioh hash:` + transaction);
+          
+          closeSend();
+          setCurrentCashPoint(null);
+          
       } catch (error) {
         setState({
           open: true,
@@ -417,8 +438,6 @@ const CashPoints = () => {
     async function createCashPointHandler(cashPointName: any, phoneNumber: any, accuracy: any, currency: any, buyRate: any, sellRate: any, duration: number, fee: string, lat: any, long: any): Promise<void> {
 
       const basefee = await cashPointsContract.BASE_FEE();
-      const destinationContract = import.meta.env.VITE_CONTRACT_ADDRESS;
-      const tokenContract = import.meta.env.VITE_TOKEN_CONTRACT;
       const mylat = lat.toString();
       const mylong = long.toString();
       const myAccuracy = accuracy.toString();
@@ -443,7 +462,7 @@ const CashPoints = () => {
       if(isCashPoint){  
         const formatedBaseFee = ethers.utils.formatEther(basefee);
 
-        await makeApproveCall( tokenContract, destinationContract, duration==0?formatedBaseFee:fee)
+        await makeApproveCall( tokenContract, ChikwamaContractAddress, duration==0?formatedBaseFee:fee)
 
         const CashPoint = await cashPointsContract.getCashPoint(smartWalletAddress);
         const currentEndtime = new Date(Date.parse(CashPoint._endTime));
@@ -457,7 +476,7 @@ const CashPoints = () => {
             request: {
               from: account,
               data: funcData,
-              to: destinationContract,
+              to: ChikwamaContractAddress,
               tokenAmount,
               tokenContract: tokenContract,
             },
@@ -482,7 +501,7 @@ const CashPoints = () => {
       
 
       const endtime =  new Date(now.setDate(now.getDate() + duration));
-      await makeApproveCall( tokenContract, destinationContract, fee)
+      await makeApproveCall( tokenContract, ChikwamaContractAddress, fee)
 
       const params = [cashPointName, city, scaledLat, scaledLong, scaledAccuracy, phoneNumber, currency, buyRate, sellRate, endtime.toString(), duration]
       const funcData = calculateAbiEncodedFunction('addCashPoint(string name, string  city, int256 latitude, int256 longitude, uint accuracy, string  phone, string currency, uint buy, uint sell, string endtime, uint duration)', params)
@@ -493,7 +512,7 @@ const CashPoints = () => {
           request: {
             from: account,
             data: funcData,
-            to: destinationContract,
+            to: ChikwamaContractAddress,
             tokenAmount,
             tokenContract: tokenContract,
           },
@@ -530,8 +549,7 @@ const CashPoints = () => {
         } else {
             const account = await getProviderWallet();
             setAccount(account); 
-            const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-            setWalletAddress(accounts[0]);
+
 
             let NumberOfCashPointsTXN = await cashPointsContract.count();
             let count = NumberOfCashPointsTXN.toNumber();
@@ -719,6 +737,11 @@ const CashPoints = () => {
                     </DialogActions>
                 </Dialog>
  
+                <SocialMediaModal
+  open={openSocialModal}
+  onClose={() => setOpenSocialModal(false)}
+  message={shareMessage}
+/>
             </main>
         </div>
     );
