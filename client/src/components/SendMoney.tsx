@@ -12,10 +12,11 @@ import cashPoints from '../../../contracts/artifacts/contracts/Cashpoints.sol/Ca
 import {  RelayClient, UserDefinedEnvelopingRequest } from '@rsksmart/rif-relay-client';
 import { ERC20__factory } from '@rsksmart/rif-relay-contracts';
 
+
 type Prop = {
     open: boolean;
     close: () => void;
-    send: (amount: any, feeAmount: any, gasFee: any) => void;
+    send: (amount: any, feeAmount: any, gasFee: any, address: string, cashout: boolean) => void;
     cashPoint: any;
     swAddress: any;
     account: any
@@ -40,7 +41,7 @@ export default function SendMoney({open, close, send, cashPoint, swAddress, acco
   };
 
   const handleSend = () => {
-    send(amount, feeAmount, gasFee);
+    send(amount, feeAmount, gasFee, cashPoint.address, true);
   }
 
   const getCostHandler = async () => {
@@ -69,9 +70,13 @@ export default function SendMoney({open, close, send, cashPoint, swAddress, acco
           },
         };
         const relayClient = new RelayClient();
-        const bitcoinPrice = BigInt(100000);
+        const bitcoinPrice = await getBitcoinPriceInUSD();
+        if (!bitcoinPrice) {
+          throw new Error('Failed to fetch Bitcoin price');
+        };
+
         const estimation = await relayClient!.estimateRelayTransaction(relayTransactionOpts);
-        const nativeFee = parseFloat(ethers.utils.formatEther(BigInt(estimation.requiredNativeAmount) * bitcoinPrice)).toFixed(4)
+        const nativeFee = parseFloat(ethers.utils.formatEther(BigInt(estimation.requiredNativeAmount) * BigInt((await bitcoinPrice).toFixed(0)))).toFixed(4)
         setGasFee(nativeFee);
       } catch (error) {
         const errorObj = error as Error;
@@ -86,6 +91,28 @@ export default function SendMoney({open, close, send, cashPoint, swAddress, acco
     setLoading(false);
 
   }
+
+  const getBitcoinPriceInUSD = async () => {
+    try {
+      const response = await fetch('https://api.coindesk.com/v1/bpi/currentprice.json');
+      
+   
+      if (!response.ok) {
+        throw new Error('Failed to fetch Bitcoin price');
+      }
+  
+ 
+      const data = await response.json();
+  
+
+      const usdRate = data.bpi.USD.rate_float;
+  
+      console.log(`The current Bitcoin price in USD is: $${usdRate}`);
+      return usdRate;
+    } catch (error) {
+      console.error('Error fetching Bitcoin price:', error);
+    }
+  };
 
 useEffect(() => {
         const getERC20Token = async () => {
@@ -122,12 +149,12 @@ useEffect(() => {
 
   return (
     <Dialog onClose={close} open={open}>
-      <DialogTitle>Withdraw</DialogTitle>
+      <DialogTitle>CASH OUT</DialogTitle>
         <DialogContent>
             {cashPoint && (
         <DialogContentText>
-            You are about to withdraw from <b>{cashPoint?.name} cashpoint in {cashPoint?.city}</b> at the rate 1 DOC to {(cashPoint?.currency).split('-')[0].trim()} {cashPoint?.buyRate}.
-            Enter the amount you would like to withdraw below:
+            You are about to cash out from <b>{cashPoint?.name} cashpoint in {cashPoint?.city}</b> at the rate 1 DOC to {(cashPoint?.currency)?.split(',')[0].trim()} {cashPoint?.buyRate}.
+            Enter the amount you would like to cash out below:
           </DialogContentText>
             )}
           {loading&&<CircularProgress sx={{
@@ -161,7 +188,7 @@ useEffect(() => {
     <span className="text-left">You will receive: </span>
     {cashPoint && 
     <span className="text-right" style={{ fontFamily: 'Digital-7, monospace' }}>
-      {(cashPoint?.currency).split(',')[0].trim()}
+      {(cashPoint?.currency)?.split(',')[0].trim()}
       {new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
@@ -180,7 +207,7 @@ useEffect(() => {
       sx={{ marginTop: 2, fontSize: '0.85rem', color: 'gray', textAlign: 'center' }}
     >
       <em>
-        Please note: You must physically meet the cashpoint operator at the specified location to complete this withdrawal. Please confirm {cashPoint?.address} is their Chikwama address
+        Please note: You must physically meet the cashpoint operator at the specified location to complete this cash out. Please confirm {cashPoint?.address} is their Chikwama address
       </em>
     </DialogContentText>
         </DialogContent>
@@ -188,7 +215,7 @@ useEffect(() => {
         <DialogActions>
             <Button onClick={getCostHandler}>Estimate Fees</Button>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button disabled={!amount || !gasFee} onClick={handleSend}>Withdraw</Button>
+          <Button disabled={!amount || !gasFee} onClick={handleSend}>CASH OUT</Button>
         </DialogActions>
     </Dialog>
   );

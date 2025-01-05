@@ -1,7 +1,7 @@
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PhoneIcon from '@mui/icons-material/Phone';
-import {  Box, Card, CardActions, CardContent, CardHeader, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fade, Link, TextField, Typography } from '@mui/material';
+import {  Box, Card, CardActions, CardContent, CardHeader, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fade, Link, Stack, TextField, Typography } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
 import { ethers, Transaction, utils } from 'ethers';
 import { Feature, Map, View } from 'ol';
@@ -10,7 +10,7 @@ import { Point } from 'ol/geom';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import 'ol/ol.css';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import OSM from 'ol/source/OSM';
 import VectorSource from 'ol/source/Vector';
 import { Icon, Style } from 'ol/style';
@@ -24,6 +24,7 @@ import {
 } from '@rsksmart/rif-relay-contracts';
 import SendMoney from './SendMoney';
 import { SocialMediaModal } from './SocialMediaModal';
+import CashIn from './CashIn';
 
 const CashPoints = () => {
     const [openCreate, setOpenCreate] = useState(false);
@@ -51,6 +52,7 @@ const CashPoints = () => {
     const cashPointsContract = new ethers.Contract(ChikwamaContractAddress, abi, signer);
     const [cardPosition, setCardPosition] = useState<{ top: number; left: number } | null>(null);
     const [openSend, setOpenSend] = useState(false);
+    const [openCashIn, setOpenCashIn] = useState(false);
     interface CashPoint {
         address: string;
         name: string;
@@ -60,6 +62,7 @@ const CashPoints = () => {
         buyRate: number;
         sellRate: number;
         until: string;
+        geometry: any[];
     }
     const [smartWalletAddress, setSmartWalletAddress] = useState<string>('');
     const FORTY_SECONDS = 40 * 1000;
@@ -67,6 +70,7 @@ const CashPoints = () => {
     const [account, setAccount] = useState<string>('');
     const [openSocialModal, setOpenSocialModal] = useState(false);
     const [shareMessage, setShareMessage] = useState(''); 
+    const [uniqueCities, setUniqueCities] = useState<string[]>([]);
 
     const mapRef = useRef<HTMLDivElement | null>(null);
     const deploySmartWallet = async (index: string) => {
@@ -133,19 +137,22 @@ const CashPoints = () => {
     const closeSend = () => {
       setOpenSend(false);
     };
-    const sendMoneyHandler = async (amount: string, fee: string, gasFee: string) => {
+
+    const closeCashIn = () => {
+      setOpenCashIn(false);
+    };
+    const sendMoneyHandler = async (amount: string, fee: string, gasFee: string, address: string, cashout: boolean) => {
       
-      const balance = ethers.utils.parseUnits(smartWalletBalance, "ether");;
-      const address = currentCashPoint?.address;
+      const balance = ethers.utils.parseUnits(smartWalletBalance, "ether");
       const amountEther = ethers.utils.parseUnits(amount, "ether");
       const feeEther = ethers.utils.parseUnits(fee, "ether");
       const gasFeeEther = ethers.utils.parseUnits(gasFee, "ether");
       const totalCost = amountEther.add(feeEther).add(gasFeeEther);
 
       
-      const message = `I just converted my crypto dollars to money I can use here in Blantyre, Malawi, thanks to Chikwama! Check it out at https://chikwama.net or follow @chikwamaio.`;
+      const message = `I just converted my crypto dollars to money I can use here in ${currentCashPoint?.city}, thanks to Chikwama! Check it out at https://chikwama.net or follow @chikwamaio.`;
       setShareMessage(message);
-      setOpenSocialModal(true);
+      
 
       if (balance.lt(totalCost)) {
         setState({
@@ -186,11 +193,16 @@ const CashPoints = () => {
             open: true,
             Transition: Fade,
           });
-          setErrorMessage(`You have successfully sent $${amount} to ${address} transactioh hash:` + transaction);
+          setErrorMessage(`You have successfully sent $${amount} to ${address}! transaction hash: ${transaction.hash}`);
           
           closeSend();
+          closeCashIn();
           setCurrentCashPoint(null);
           
+          if(cashout){
+            setOpenSocialModal(true);
+          }
+
       } catch (error) {
         setState({
           open: true,
@@ -239,7 +251,7 @@ const CashPoints = () => {
               }),
             })
           );
-          console.log(cp, isActive[index]);
+
           if(isActive[index]){
           vectorSource.addFeature(CashPoint);
           }
@@ -264,11 +276,38 @@ const CashPoints = () => {
           controls: defaultControls(),
         });
     
-        // Display popover on feature click
+        const zoomtolausanne = document.getElementById('zoomtolausanne');
+        zoomtolausanne?.addEventListener(
+              'click',
+              function () {
+                const city = zoomtolausanne.textContent;
+                const cp = cps.find((cp) => cp.city.split(',')[0].trim() === city);
+
+                const lat = parseFloat(ethers.utils.formatEther(cp[2] || "0")); // Handle undefined or invalid values
+                const long = parseFloat(ethers.utils.formatEther(cp[3] || "0"));
+
+                const coords: [number, number] = [long, lat];
+                const location = new Feature({geometry: new Point(fromLonLat(coords))})
+                const point = location.getGeometry();
+                const size = map.getSize();
+                const view = map.getView();
+                const coordinates = point?.getCoordinates();
+                if (coordinates && size) {
+                  view.centerOn(coordinates, size, [270, 300]);
+                }
+              },
+              false,
+        );
+
+
         map.on('click', (evt) => {
           const feature = map.forEachFeatureAtPixel(evt.pixel, (f) => f) as Feature<Point> | null;
 
           if (feature) {
+            const geometry = feature.getGeometry()?.getCoordinates() || [];
+            const transformedCoordinates = toLonLat(geometry);
+            const [longitude, latitude] = transformedCoordinates;
+
             setCurrentCashPoint({
                 address: feature.get('address'),
                 name: feature.get('name'),
@@ -278,17 +317,18 @@ const CashPoints = () => {
                 buyRate: feature.get('buyRate'),
                 sellRate: feature.get('sellRate'),
                 until: feature.get('until'),
+                geometry: [longitude, latitude],
             });
             setCardPosition({
               top: evt.pixel[1],
               left: evt.pixel[0],
             });
+            
           } else {
             setCurrentCashPoint(null);
           }
         });
-    
-        // Cleanup on component unmount
+
         return () => {
           map.setTarget('');
         };
@@ -569,8 +609,21 @@ const CashPoints = () => {
             }
             setIsActive(active);
             getData(registeredCashPoints);
+
+ 
+              
+         
         }
+
     }
+
+    useEffect(() => {
+      const cities = data.map((entry: any) => entry.city.split(",")[0].trim());
+              const unique = Array.from(new Set(cities));
+
+              setUniqueCities(unique);
+      console.log("Updated uniqueCities state:", uniqueCities);
+    }, [data]);
 
 
 
@@ -607,6 +660,8 @@ const CashPoints = () => {
       if(result) setUsername(result[0]);
     },[data])
 
+
+
     return (
         <div className='min-h-screen flex flex-col text-slate-500'>
             <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance} />
@@ -627,13 +682,22 @@ const CashPoints = () => {
             <main className='text-black container mx-auto pt-16 flex-1 text-left'>
             
                     <h4 className='text-xl text-slate-700 lg:text-2xl uppercase text-left py-6'>Find a cashpoint:</h4>
-                    {isCashPoint && <p className='text-slate-700 mb-2'>Welcome back! You're signed in as {username} cashpoint.</p>}
+                    {isCashPoint && <p className='text-slate-700 mb-2'>Welcome back! You're signed in as <b>{username}</b> cashpoint.</p>}
+                    <Stack
+      direction="row"
+      spacing={2}
+      sx={{ margin: "20px", flexWrap: "wrap", gap: 1 }}
+    >
+      {uniqueCities.map((city, index) => (
+        <Chip id="zoomtolausanne" key={index} label={city} color="secondary" variant="outlined" clickable/>
+      ))}
+    </Stack>
             <div id="map" ref={mapRef} style={{ width: '100%', height: '500px' }} />
             <div className="flex justify-center">
                 <button className="z-100 text-white bg-[#872A7F] mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring" onClick={handleOpenCreate}>
-                    {isCashPoint?"Update cashpoint details":"Become a cashpoint"}
+                    {isCashPoint?"UPDATE CASHPOINT DETAILS":"BECOME A CASHPOINT"}
                 </button>
-                {isCashPoint &&<button className="z-100 text-white bg-[#872A7F] ml-2 mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring">Sell Dollars</button>}
+                {isCashPoint &&<button onClick={() => { setOpenCashIn(true); const currentcp = data.find(cp => cp.address === smartWalletAddress); setCurrentCashPoint(currentcp); }} className="z-100 text-white bg-[#872A7F] ml-2 mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring">CASH IN</button>}
             </div>
 {currentCashPoint && cardPosition && (
   <Card 
@@ -661,8 +725,8 @@ const CashPoints = () => {
       />
     </Box>
     <Typography>
-      <LocationOnIcon /> {' '}
-      <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.city}</span>
+      <LocationOnIcon />{' '}
+        <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.city}</span>
     </Typography>
     <Typography variant="body2" color="text.secondary">
       <span>Currency:</span>{' '}
@@ -675,28 +739,29 @@ const CashPoints = () => {
       <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.sellRate}</span>
     </Typography>
     <Typography variant="body2" color="text.secondary">
-      
       <span>Valid Until:</span>{' '}
       <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.until}</span>
     </Typography>
     <Typography variant="body2">
-      <PhoneIcon /> {' '}
+      <PhoneIcon />{' '}
       <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.phoneNumber}</span>
     </Typography>
   </CardContent>
   <CardActions>
-  <button 
-    className="text-white bg-[#872A7F] py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring"
-    onClick={() => {setOpenSend(true); }}
-  >{<AccountBalanceWalletIcon />} 
-    Withdraw
-  </button>
+    <button 
+      className="text-white bg-[#872A7F] py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring"
+      onClick={() => { setOpenSend(true); }}
+    >
+      <AccountBalanceWalletIcon /> 
+      CASH OUT
+    </button>
   </CardActions>
 </Card>
             )}
             
        <AddCashPoint open={openCreate} close={closeCreate} update={isCashPoint} add={createCashPointHandler}></AddCashPoint>
        <SendMoney open={openSend} close={closeSend} send={sendMoneyHandler} cashPoint={currentCashPoint} swAddress={smartWalletAddress} account={account}></SendMoney>
+       <CashIn open={openCashIn} close={closeCashIn} send={sendMoneyHandler} cashPoint={currentCashPoint} swAddress={smartWalletAddress} account={account}></CashIn>
                 <div className='my-4'>
                     <Link className='text-[#872A7F] ' color="inherit" component='button' onClick={handleEmailModalOpen}>
                         Can’t find a cash point at your desired location?

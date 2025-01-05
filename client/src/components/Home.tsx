@@ -21,11 +21,12 @@ const Home = () => {
     const [smartWalletBalance, setSmartWalletBalance] = useState("")
     const [tokenPrice, setTokenPrice] = useState<number>(0)
     const navigate = useNavigate();
+    const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(true);
     const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
     const abi = cashPoints.abi;
     const ethereum = (window as any).ethereum;
-    const provider = new ethers.providers.Web3Provider(ethereum);
-    const signer = provider.getSigner();
+    const provider = ethereum ? new ethers.providers.Web3Provider(ethereum) : null;
+    const signer = provider?.getSigner();
     const cashPointsContract = new ethers.Contract(contractAddress, abi, signer);
     const [state, setState] = useState({
       open: false,
@@ -99,9 +100,17 @@ const Home = () => {
 
   
     const checkWalletIsConnected = async () => {
+      if(!provider){
+        
+        setIsMetaMaskInstalled(false);
+        return;
+      }
+
       const network =(await provider.getNetwork()).chainId;
       const account = await getProviderWallet();
-    setAccount(account); 
+      if (account) {
+        setAccount(account);
+      }
 
     if(!ethereum)
     {
@@ -127,12 +136,10 @@ const Home = () => {
                     "http://127.0.0.1:4444"
                   ],
                   "iconUrls": [
-                    "https://xdaichain.com/fake/example/url/xdai.svg",
-                    "https://xdaichain.com/fake/example/url/xdai.png"
                   ],
                   "nativeCurrency": {
-                    "name": "RBTC",
-                    "symbol": "RBTC",
+                    "name": "TRBTC",
+                    "symbol": "TRBTC",
                     "decimals": 18
                   },
                   "blockExplorerUrls": [
@@ -279,10 +286,20 @@ const Home = () => {
 
   
 
+  useEffect(() => {
+    console.log(ethereum, provider)
+  }, []);
 
   useEffect(() => {
+
+
+    checkWalletIsConnected();
     const getERC20Token = async () => {
       const tokenAddress = import.meta.env.VITE_TOKEN_CONTRACT;
+      
+      if (!provider) {
+        throw new Error("Provider is not available");
+      }
       const instance = ERC20__factory.connect(tokenAddress, provider);
   
       const [symbol, name, decimals] = await Promise.all([
@@ -314,7 +331,7 @@ const Home = () => {
           const formattedTokenBalance = tokenBalanceInDollars.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
           setSmartWalletBalance(formattedTokenBalance);
     
-        checkWalletIsConnected();
+        
       } catch (error) {
         console.error("Error fetching ERC-20 token:", error);
       }
@@ -323,7 +340,25 @@ const Home = () => {
     fetchERC20Data(); // Call the fetch function
   }, [provider]);
 
-  return (
+  const renderMetaMaskPrompt = () => (
+    <div className="flex flex-col items-center justify-center h-screen text-center text-slate-500">
+        <h2 className="text-2xl md:text-3xl font-bold text-red-600">Oops! No MetaMask detected!</h2>
+        <p className="mt-4 text-lg">
+            This is a blockchain app. To experience the *Internet of Value*, you'll need MetaMask installed.  
+            <br />
+            Don't worry, it's not as scary as it sounds!
+        </p>
+        <a
+            href="https://metamask.io/download/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 px-4 py-2 bg-[#872A7F] text-white rounded hover:bg-transparent hover:text-[#872A7F] border border-[#872A7F]"
+        >
+            Install MetaMask
+        </a>
+    </div>
+);
+return isMetaMaskInstalled ? (
     
     <div className='container w-full h-screen text-slate-500'>
     <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance}/>
@@ -346,7 +381,7 @@ const Home = () => {
         <div className='absolute top-1 right-1 group'>
             <span className='text-gray-400 cursor-pointer'><HelpOutlineIcon/></span>
             <div className='hidden group-hover:block absolute right-1 bg-gray-800 text-white text-sm p-2 rounded-lg shadow-md w-40 tooltip-container'>
-                This is the current price of the CHK token in USD.
+                This is the current price of the Chikwama token in USD.
             </div>
         </div>
     </div>
@@ -358,7 +393,7 @@ const Home = () => {
         <div className='absolute top-1 right-1 group'>
             <span className='text-gray-400 cursor-pointer'><HelpOutlineIcon/></span>
             <div className='hidden group-hover:block absolute right-1 bg-gray-800 text-white text-sm p-2 rounded-lg shadow-md w-40 tooltip-container'>
-                This shows your current CHK token balance.
+                This shows your current Chikwama token balance.
             </div>
         </div>
     </div>
@@ -370,7 +405,7 @@ const Home = () => {
         <div className='absolute top-1 right-1 group'>
             <span className='text-gray-400 cursor-pointer'><HelpOutlineIcon/></span>
             <div className='hidden group-hover:block absolute right-1 bg-gray-800 text-white text-sm p-2 rounded-lg shadow-md w-40 tooltip-container'>
-                This indicates the total funds held in the DAO's smart contract, i.e., Chikwama DAO revenue to date.
+                This indicates the total funds held in the DAO's smart contract, i.e., Chikwama DAO revenue to date less any stake liquidations.
             </div>
         </div>
     </div>
@@ -394,7 +429,9 @@ const Home = () => {
       </main>
       <Footer/>
     </div>
-  )
+  ): (
+    renderMetaMaskPrompt()
+);
 }
 
 export default Home;

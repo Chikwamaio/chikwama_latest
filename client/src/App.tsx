@@ -10,6 +10,7 @@ import LandingPage from './components/LandingPage';
 import SmartWallet from './components/SmartWallet';
 import Home from './components/Home';
 import CashPoints from './components/CashPoints';
+import Dao from './components/Dao';
 
 function App() {
   
@@ -21,6 +22,7 @@ function App() {
         <Route path='/Home' element={<Home/>}></Route>
         <Route path='/CashPoints' element={<CashPoints/>}></Route>
         <Route path='/SmartWallet' element={<SmartWallet/>}></Route>
+        <Route path='/Dao' element={<Dao/>}></Route>
           <Route path='*'  element={<LandingPage />}>
           </Route>
           </Routes>
