@@ -223,6 +223,7 @@ const CashPoints = () => {
 
     
         cps.forEach((cp, index) => {
+          console.log(cp)
           const lat = parseFloat(ethers.utils.formatEther(cp[2] || "0")); // Handle undefined or invalid values
           const long = parseFloat(ethers.utils.formatEther(cp[3] || "0"));
           const buyRate = parseFloat((cp[7] || "0")).toFixed(2);
@@ -276,28 +277,7 @@ const CashPoints = () => {
           controls: defaultControls(),
         });
     
-        const zoomtolausanne = document.getElementById('zoomtolausanne');
-        zoomtolausanne?.addEventListener(
-              'click',
-              function () {
-                const city = zoomtolausanne.textContent;
-                const cp = cps.find((cp) => cp.city.split(',')[0].trim() === city);
 
-                const lat = parseFloat(ethers.utils.formatEther(cp[2] || "0")); // Handle undefined or invalid values
-                const long = parseFloat(ethers.utils.formatEther(cp[3] || "0"));
-
-                const coords: [number, number] = [long, lat];
-                const location = new Feature({geometry: new Point(fromLonLat(coords))})
-                const point = location.getGeometry();
-                const size = map.getSize();
-                const view = map.getView();
-                const coordinates = point?.getCoordinates();
-                if (coordinates && size) {
-                  view.centerOn(coordinates, size, [270, 300]);
-                }
-              },
-              false,
-        );
 
 
         map.on('click', (evt) => {
@@ -328,6 +308,37 @@ const CashPoints = () => {
             setCurrentCashPoint(null);
           }
         });
+
+
+        const parentDiv = document.getElementById('zoomtolausanne'); // Select the parent div
+const spans = parentDiv.querySelectorAll('span.MuiChip-label'); // Select all span elements with class "MuiChip-label"
+
+// Add an event listener to each span
+spans.forEach((span) => {
+  span.addEventListener('click', () => {
+    const city = span.textContent; // Get the city name from the span
+    
+    // Add your specific logic here, e.g., zooming to the city
+    const cp = cps.find((cp) => cp.city.split(',')[0].trim() === city);
+    if (cp && cp[2] !== undefined && cp[3] !== undefined)  {
+      const lat = parseFloat(ethers.utils.formatEther(cp[2] || '0')); // Handle undefined or invalid values
+      const long = parseFloat(ethers.utils.formatEther(cp[3] || '0'));
+
+      const coords = [long, lat];
+      const location = new Feature({ geometry: new Point(fromLonLat(coords)) });
+      const point = location.getGeometry();
+      const size = map.getSize();
+      const view = map.getView();
+      const coordinates = point?.getCoordinates();
+
+      if (coordinates && size) {
+        view.centerOn(coordinates, size, [270, 300]); // Center map on the city
+      }
+    } else {
+      console.warn(`City "${city}" not found in data.`);
+    }
+  });
+});
 
         return () => {
           map.setTarget('');
@@ -684,12 +695,13 @@ const CashPoints = () => {
                     <h4 className='text-xl text-slate-700 lg:text-2xl uppercase text-left py-6'>Find a cashpoint:</h4>
                     {isCashPoint && <p className='text-slate-700 mb-2'>Welcome back! You're signed in as <b>{username}</b> cashpoint.</p>}
                     <Stack
+                    id="zoomtolausanne" 
       direction="row"
       spacing={2}
       sx={{ margin: "20px", flexWrap: "wrap", gap: 1 }}
     >
       {uniqueCities.map((city, index) => (
-        <Chip id="zoomtolausanne" key={index} label={city} color="secondary" variant="outlined" clickable/>
+        <Chip key={index} label={city} color="secondary" variant="outlined" clickable/>
       ))}
     </Stack>
             <div id="map" ref={mapRef} style={{ width: '100%', height: '500px' }} />
