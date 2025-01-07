@@ -297,37 +297,60 @@ const Dao = () => {
             }, [provider]);
 
     return(
-        <><div className='min-h-screen flex flex-col text-slate-500'>
-        <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance}/>
-        <main className=' text-black container mx-auto px-6 md:pt-24 pt-24 min-h-max flex-1 text-left mb-8 pb-16'>
-        <h1 className='text-3xl md:text-3xl text-slate-700 lg:text-8xl font-bold uppercase mb-8'>Chikwama DAO</h1>
-        <p>A DAO or decentralised autonomous organisation is a member-owned community without centralized leadership. Created because said members share a common goal. The rules that govern a DAO are encoded as a <Link className='text-[#872A7F] ' href='https://github.com/Chikwama-io/ChikwamaWebsite/blob/master/contracts/contracts/Cashpoints.sol'>computer program.</Link></p>
-        <br></br>
-        <p>The chikwama DAO was created to catalyse the creation of a global network of blockchain based digital dollar cashpoints. The original members believe that would be cash point operators can be incentivised to operate cash points by allowing them to <Link className='text-[#872A7F] ' onClick={handleOpenBuy}>own a stake in the DAO</Link> and <Link className='text-[#872A7F] ' onClick={handleOpenWithdraw}>liquidate</Link> their stake in a permissionless manner. </p>
-        {loading&&<CircularProgress sx={{
-              position: 'absolute',
-              top: 250,
-              left: 120,
-              zIndex: 1,
-            }} size={68} color="secondary" />}
-        <BuyTokens open={openBuyModal} buyTokens={buyTokensHandler} close={handleCloseBuyModal} available={availableTokens}></BuyTokens>
-        <Withdraw open={openWithdrawModal} withdraw={withdrawHandler} close={handleCloseWithdrawModal} balance={chkTokenBalance}></Withdraw>
+        <><div className="min-h-screen flex flex-col text-slate-500">
+        <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance} />
+        <main className="text-black container mx-auto px-6 md:pt-24 pt-24 flex-1 text-left mb-8 pb-16">
+          <h1 className="text-3xl md:text-3xl text-slate-700 lg:text-8xl font-bold uppercase mb-8">Chikwama DAO</h1>
+          <p>
+            A DAO or decentralised autonomous organisation is a member-owned community without centralized leadership.
+            Created because said members share a common goal. The rules that govern a DAO are encoded as a{' '}
+            <Link className="text-[#872A7F]" href="https://github.com/Chikwama-io/ChikwamaWebsite/blob/master/contracts/contracts/Cashpoints.sol">
+              computer program.
+            </Link>
+          </p>
+          <br />
+          <p>
+            The Chikwama DAO was created to catalyse the creation of a global network of blockchain-based digital dollar cashpoints.
+            The original members believe that would-be cash point operators can be incentivised to operate cash points by allowing
+            them to{' '}
+            <Link className="text-[#872A7F]" onClick={handleOpenBuy}>
+              own a stake in the DAO
+            </Link>{' '}
+            and{' '}
+            <Link className="text-[#872A7F]" onClick={handleOpenWithdraw}>
+              liquidate
+            </Link>{' '}
+            their stake in a permissionless manner.
+          </p>
+          {loading && (
+            <CircularProgress
+              sx={{
+                position: 'absolute',
+                top: 250,
+                left: 120,
+                zIndex: 1,
+              }}
+              size={68}
+              color="secondary"
+            />
+          )}
+          <BuyTokens open={openBuyModal} buyTokens={buyTokensHandler} close={handleCloseBuyModal} available={availableTokens} />
+          <Withdraw open={openWithdrawModal} withdraw={withdrawHandler} close={handleCloseWithdrawModal} balance={chkTokenBalance} />
         </main>
-        <Snackbar 
-      anchorOrigin={{
-        vertical: 'top',
-        horizontal: 'center',
-      }}
-      open={state.open}
-        onClose={handleClose}
-        autoHideDuration={3000}
-        TransitionComponent={state.Transition}
-        message={errorMessage}
-        key={state.Transition.name}>
-        
-        </Snackbar>
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'center',
+          }}
+          open={state.open}
+          onClose={handleClose}
+          autoHideDuration={3000}
+          TransitionComponent={state.Transition}
+          message={errorMessage}
+          key={state.Transition.name}
+        />
         <Footer />
-        </div>
+      </div>
         </>);
 }
 

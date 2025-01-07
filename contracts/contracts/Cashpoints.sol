@@ -34,7 +34,7 @@ contract CashPoints is ERC20 {
     uint public AVAILABLE_TOKENS;
     uint public PRICE_PER_TOKEN; //erc20 token price
     uint public CASHPOINT_FEE = 0.5 ether;
-    uint public BASE_FEE = 1;
+    uint public BASE_FEE = 1 ether;
     uint public TRANSACTION_COMMISION = 1; //percentage commission on transactions routed through the contract
     uint public count = 0;
     bool public reentrancyLock = false; // Added reentrancyLock

@@ -3,7 +3,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PhoneIcon from '@mui/icons-material/Phone';
 import {  Box, Card, CardActions, CardContent, CardHeader, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fade, Link, Stack, TextField, Typography } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
-import { ethers, Transaction, utils } from 'ethers';
+import { ethers, Transaction, utils, BigNumber } from 'ethers';
 import { Feature, Map, View } from 'ol';
 import { defaults as defaultControls } from 'ol/control';
 import { Point } from 'ol/geom';
@@ -311,9 +311,9 @@ const CashPoints = () => {
 
 
         const parentDiv = document.getElementById('zoomtolausanne'); // Select the parent div
-const spans = parentDiv.querySelectorAll('span.MuiChip-label'); // Select all span elements with class "MuiChip-label"
+const spans = parentDiv?.querySelectorAll('span.MuiChip-label'); // Select all span elements with class "MuiChip-label"
 
-// Add an event listener to each span
+if(spans){
 spans.forEach((span) => {
   span.addEventListener('click', () => {
     const city = span.textContent; // Get the city name from the span
@@ -339,11 +339,11 @@ spans.forEach((span) => {
     }
   });
 });
-
+}
         return () => {
           map.setTarget('');
         };
-    
+     
     }, [data]);
 
     useEffect(() => {
@@ -496,7 +496,8 @@ spans.forEach((span) => {
       const scaledLat= ethers.utils.parseUnits(mylat, "ether");
       const scaledLong = ethers.utils.parseUnits(mylong, "ether");
       const scaledAccuracy = ethers.utils.parseUnits(myAccuracy, "ether");
-    
+
+
       const swAddress = smartWalletAddress;
       const tokenAmount = 0;
 
@@ -608,6 +609,7 @@ spans.forEach((span) => {
             let registeredCashPoints = [];
             let active = [];
             for (let i = 1; i <= count; i++) {
+   
                 let CashPointAddress = await cashPointsContract.keys(i);
                 let CashPoint = await cashPointsContract.getCashPoint(CashPointAddress);
                 let now = new Date();
@@ -746,7 +748,7 @@ spans.forEach((span) => {
     </Typography>
     <Typography variant="body2">
       <span>Buy:</span>{' '}
-      <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.buyRate}</span>{' '}
+      <span>{(currentCashPoint.buyRate).toString()}</span>{' '}
       <span>Sell:</span>{' '}
       <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.sellRate}</span>
     </Typography>

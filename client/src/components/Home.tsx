@@ -363,7 +363,7 @@ return isMetaMaskInstalled ? (
     <div className='container w-full h-screen text-slate-500'>
     <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance}/>
       <main className='flex flex-grow w-full md:pt-24 pt-24 min-h-max'>
-      <div className='basis-1/2 pr-4'>
+      <div className='basis-1/2 p-4'>
       <h2 className='md:text-3xl text-3xl text-slate-700 lg:text-6xl uppercase'> Welcome to</h2>
       <h1 className='text-3xl md:text-3xl text-slate-700 lg:text-8xl font-bold uppercase mb-8'>Chikwama</h1>
       

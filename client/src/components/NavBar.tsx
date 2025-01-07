@@ -65,7 +65,7 @@ const NavBar = ({ walletAddress, eoa, tokenBalance }: Prop) => {
             </span>
           </div>
           <div>
-            <ul className={`md:flex md:items-center md:pb-0 pb-12 absolute md:static bg-white md:z-auto z-[-1] left-0 w-full md:w-auto md:pl-0 pl-9 md:pt-0 pt-6 transition-all duration-500 ease-in ${menuOpen ? 'top-20 opacity-100' : 'top-[-490] md:opacity-100 opacity-0'}`}>
+            <ul className={`md:flex md:items-center md:pb-0 pb-12 absolute md:static bg-white md:z-auto z-[-1] left-0 w-full md:w-auto md:pl-0 pl-9 md:pt-0 pt-6 transition-all duration-500 ease-in ${menuOpen ? 'top-20 opacity-100' : 'hidden'}`}>
               <li className="cursor-pointer md:mt-5 mt-2 mr-3 hover:text-fuchsia-700"><a href='/cashpoints'>Cashpoints</a></li>
               <li className="cursor-pointer md:mt-5 mt-2 mr-3 hover:text-fuchsia-700"><a href='/dao'>DAO</a></li>
               <div className='w-fit '>
