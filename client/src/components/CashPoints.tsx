@@ -3,7 +3,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PhoneIcon from '@mui/icons-material/Phone';
 import {  Box, Card, CardActions, CardContent, CardHeader, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Fade, Link, Stack, TextField, Typography } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
-import { ethers, Transaction, utils, BigNumber } from 'ethers';
+import { ethers, Transaction, utils } from 'ethers';
 import { Feature, Map, View } from 'ol';
 import { defaults as defaultControls } from 'ol/control';
 import { Point } from 'ol/geom';
@@ -223,11 +223,11 @@ const CashPoints = () => {
 
     
         cps.forEach((cp, index) => {
-          console.log(cp)
-          const lat = parseFloat(ethers.utils.formatEther(cp[2] || "0")); // Handle undefined or invalid values
+
+          const lat = parseFloat(ethers.utils.formatEther(cp[2] || "0")); 
           const long = parseFloat(ethers.utils.formatEther(cp[3] || "0"));
-          const buyRate = parseFloat((cp[7] || "0")).toFixed(2);
-          const sellRate = parseFloat((cp[8] || "0")).toFixed(2);
+          const buyRate = parseFloat(ethers.utils.formatEther(cp[7] || "0")).toFixed(2);
+          const sellRate = parseFloat(ethers.utils.formatEther(cp[8] || "0")).toFixed(2);
 
         const coords: [number, number] = [long, lat];
 
@@ -252,7 +252,6 @@ const CashPoints = () => {
               }),
             })
           );
-
           if(isActive[index]){
           vectorSource.addFeature(CashPoint);
           }
@@ -272,7 +271,7 @@ const CashPoints = () => {
           ],
           view: new View({
             center: fromLonLat([35, -15]),
-            zoom: 5,
+            zoom: 6,
           }),
           controls: defaultControls(),
         });
@@ -287,7 +286,6 @@ const CashPoints = () => {
             const geometry = feature.getGeometry()?.getCoordinates() || [];
             const transformedCoordinates = toLonLat(geometry);
             const [longitude, latitude] = transformedCoordinates;
-
             setCurrentCashPoint({
                 address: feature.get('address'),
                 name: feature.get('name'),
@@ -310,36 +308,36 @@ const CashPoints = () => {
         });
 
 
-        const parentDiv = document.getElementById('zoomtolausanne'); // Select the parent div
-const spans = parentDiv?.querySelectorAll('span.MuiChip-label'); // Select all span elements with class "MuiChip-label"
+        const parentDiv = document.getElementById("zoomtolausanne"); 
+        const spans = parentDiv?.querySelectorAll("span.MuiChip-label"); 
 
-if(spans){
-spans.forEach((span) => {
-  span.addEventListener('click', () => {
-    const city = span.textContent; // Get the city name from the span
-    
-    // Add your specific logic here, e.g., zooming to the city
-    const cp = cps.find((cp) => cp.city.split(',')[0].trim() === city);
-    if (cp && cp[2] !== undefined && cp[3] !== undefined)  {
-      const lat = parseFloat(ethers.utils.formatEther(cp[2] || '0')); // Handle undefined or invalid values
-      const long = parseFloat(ethers.utils.formatEther(cp[3] || '0'));
+        if(spans){
+        spans.forEach((span) => {
+          span.addEventListener('click', () => {
+            const city = span.textContent; 
+            
+            const cp = cps.find((cp) => cp.city.split(',')[0].trim() === city);
+            if (cp && cp[2] !== undefined && cp[3] !== undefined)  {
+              const lat = parseFloat(ethers.utils.formatEther(cp[2] || '0')); 
+              const long = parseFloat(ethers.utils.formatEther(cp[3] || '0'));
 
-      const coords = [long, lat];
-      const location = new Feature({ geometry: new Point(fromLonLat(coords)) });
-      const point = location.getGeometry();
-      const size = map.getSize();
-      const view = map.getView();
-      const coordinates = point?.getCoordinates();
+              const coords = [long, lat];
+              const location = new Feature({ geometry: new Point(fromLonLat(coords)) });
+              const point = location.getGeometry();
+              const size = map.getSize();
+              const view = map.getView();
+              const coordinates = point?.getCoordinates();
 
-      if (coordinates && size) {
-        view.centerOn(coordinates, size, [270, 300]); // Center map on the city
-      }
-    } else {
-      console.warn(`City "${city}" not found in data.`);
-    }
-  });
-});
-}
+              if (coordinates && size) {
+                view.centerOn(coordinates, size, [500, 200]);
+
+              }
+            } else {
+              console.warn(`City "${city}" not found in data.`);
+            }
+          });
+        });
+        }
         return () => {
           map.setTarget('');
         };
@@ -496,6 +494,8 @@ spans.forEach((span) => {
       const scaledLat= ethers.utils.parseUnits(mylat, "ether");
       const scaledLong = ethers.utils.parseUnits(mylong, "ether");
       const scaledAccuracy = ethers.utils.parseUnits(myAccuracy, "ether");
+      const buyEther = ethers.utils.parseUnits(buyRate, "ether");
+      const sellEther = ethers.utils.parseUnits(sellRate, "ether");
 
 
       const swAddress = smartWalletAddress;
@@ -521,7 +521,7 @@ spans.forEach((span) => {
         const IsActive = currentEndtime > now;
         const newEndtime = IsActive ? new Date(currentEndtime.setDate(currentEndtime.getDate() + duration)) : new Date(now.setDate(now.getDate() + duration));
         if(city){
-          const params = [cashPointName, city, scaledLat, scaledLong, scaledAccuracy, phoneNumber, currency, buyRate, sellRate, newEndtime.toString(), duration]
+          const params = [cashPointName, city, scaledLat, scaledLong, scaledAccuracy, phoneNumber, currency, buyEther, sellEther, newEndtime.toString(), duration]
           const funcData = calculateAbiEncodedFunction('updateCashPoint(string name, string  city, int256 latitude, int256 longitude, uint accuracy, string  phone, string currency, uint buy, uint sell, string endtime, uint duration)', params);
 
           const relayTransactionOpts: UserDefinedEnvelopingRequest = {
@@ -555,7 +555,7 @@ spans.forEach((span) => {
       const endtime =  new Date(now.setDate(now.getDate() + duration));
       await makeApproveCall( tokenContract, ChikwamaContractAddress, fee)
 
-      const params = [cashPointName, city, scaledLat, scaledLong, scaledAccuracy, phoneNumber, currency, buyRate, sellRate, endtime.toString(), duration]
+      const params = [cashPointName, city, scaledLat, scaledLong, scaledAccuracy, phoneNumber, currency, buyEther, sellEther, endtime.toString(), duration]
       const funcData = calculateAbiEncodedFunction('addCashPoint(string name, string  city, int256 latitude, int256 longitude, uint accuracy, string  phone, string currency, uint buy, uint sell, string endtime, uint duration)', params)
 
     
@@ -631,12 +631,15 @@ spans.forEach((span) => {
     }
 
     useEffect(() => {
-      const cities = data.map((entry: any) => entry.city.split(",")[0].trim());
-              const unique = Array.from(new Set(cities));
-
-              setUniqueCities(unique);
+      const cities = data
+        .filter((_, index) => isActive[index]) 
+        .map((entry: any) => entry.city.split(",")[0].trim()); 
+    
+      const unique = Array.from(new Set(cities)); 
+    
+      setUniqueCities(unique);
       console.log("Updated uniqueCities state:", uniqueCities);
-    }, [data]);
+    }, [data, isActive]); 
 
 
 
@@ -650,28 +653,50 @@ spans.forEach((span) => {
     };
 
     const handleEmailSubmit = async () => {
-        const scriptURL = emailScriptURL; 
-        console.log(email,location);
-        try {
-            const response = await fetch(scriptURL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify({ email, location }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const result = await response.json();
-            console.log(result); // Should log "Success"
-            setOpenEmailModal(false);
-        } catch (error) {
-            console.error('Error submitting email:', error);
-            setOpenEmailModal(false);
-        }
-    };
+      const apiURL = 'http://localhost:5001/submit'; // Node.js API URL
+      try {
+          const response = await fetch(apiURL, {
+              method: 'POST',
+              body: JSON.stringify({ email, location }),
+              headers: { 'Content-Type': 'application/json' },
+          });
+          const result = await response.json();
+          console.log(result); // Should log "Success"
+          setOpenEmailModal(false);
+      } catch (error) {
+          console.error('Error submitting email:', error);
+          setOpenEmailModal(false);
+      }
+  };
 
     useEffect(() => {
       const result = data.find(item => item.address === smartWalletAddress);
       if(result) setUsername(result[0]);
     },[data])
+
+    const handleCashIn = ()=>{
+      setOpenCashIn(true);
+      const currentcp = data.find(cp => cp.address === smartWalletAddress);
+
+      const lat = parseFloat(ethers.utils.formatEther(currentcp[2] || "0")); 
+      const long = parseFloat(ethers.utils.formatEther(currentcp[3] || "0"));
+      const buyRate = parseFloat(ethers.utils.formatEther(currentcp[7] || "0")).toFixed(2);
+      const sellRate = parseFloat(ethers.utils.formatEther(currentcp[8] || "0")).toFixed(2);
+      const coords: [number, number] = [long, lat];
+
+      
+      setCurrentCashPoint({
+        address: currentcp.address,
+        name: currentcp[0],
+        city: currentcp[1],
+        phoneNumber: currentcp[5],
+        currency: currentcp[6],
+        buyRate: Number(buyRate),
+        sellRate: Number(sellRate),
+        until: currentcp[9],
+        geometry: coords,
+    });
+    }
 
 
 
@@ -709,9 +734,9 @@ spans.forEach((span) => {
             <div id="map" ref={mapRef} style={{ width: '100%', height: '500px' }} />
             <div className="flex justify-center">
                 <button className="z-100 text-white bg-[#872A7F] mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring" onClick={handleOpenCreate}>
-                    {isCashPoint?"UPDATE CASHPOINT DETAILS":"BECOME A CASHPOINT"}
+                    {isCashPoint?"Update Cashpoint details!":"Become a Cashpoint!"}
                 </button>
-                {isCashPoint &&<button onClick={() => { setOpenCashIn(true); const currentcp = data.find(cp => cp.address === smartWalletAddress); setCurrentCashPoint(currentcp); }} className="z-100 text-white bg-[#872A7F] ml-2 mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring">CASH IN</button>}
+                {isCashPoint &&<button onClick={handleCashIn} className="z-100 text-white bg-[#872A7F] ml-2 mb-2 mt-2 py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border hover:border-[#872A7F] focus:outline-none focus:ring">Cash In!</button>}
             </div>
 {currentCashPoint && cardPosition && (
   <Card 
@@ -748,7 +773,7 @@ spans.forEach((span) => {
     </Typography>
     <Typography variant="body2">
       <span>Buy:</span>{' '}
-      <span>{(currentCashPoint.buyRate).toString()}</span>{' '}
+      <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.buyRate}</span>{' '}
       <span>Sell:</span>{' '}
       <span style={{ fontFamily: 'Digital-7, monospace' }}>{currentCashPoint.sellRate}</span>
     </Typography>

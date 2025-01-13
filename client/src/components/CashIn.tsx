@@ -154,7 +154,7 @@ useEffect(() => {
         <DialogContent>
             {cashPoint && (
         <DialogContentText>
-            You are about to perform a cash in at <b>{cashPoint?._name} cashpoint in {cashPoint?.city}</b> at the rate 1 DOC to {(cashPoint?._currency)?.split(',')[0].trim()} {(cashPoint?._buy)?.toString()}.
+            You are about to perform a cash in at <b>{cashPoint?.name} cashpoint in {cashPoint?.city}</b> at the rate 1 DOC to {(cashPoint?._currency)?.split(',')[0].trim()} {(cashPoint?.buyRate)?.toString()}.
             Enter the amount of DOC you would like to sell and the account of the user you are selling to below:
           </DialogContentText>
             )}
@@ -211,7 +211,7 @@ useEffect(() => {
       {new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(amount * cashPoint?._buy)}
+      }).format(amount * cashPoint?.buyRate)}
     </span>
 }
   </div>

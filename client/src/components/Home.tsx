@@ -318,7 +318,7 @@ const Home = () => {
   
     const fetchERC20Data = async () => {
       try {
-        const tokenContract = await getERC20Token(); // Await the result
+        const tokenContract = await getERC20Token(); 
         const balance = await tokenContract.instance.balanceOf(contractAddress);
 
         const tokenbalance = await tokenContract.instance.balanceOf(smartWalletAddress);
@@ -337,7 +337,7 @@ const Home = () => {
       }
     };
   
-    fetchERC20Data(); // Call the fetch function
+    fetchERC20Data(); 
   }, [provider]);
 
   const renderMetaMaskPrompt = () => (
@@ -360,7 +360,7 @@ const Home = () => {
 );
 return isMetaMaskInstalled ? (
     
-    <div className='container w-full h-screen text-slate-500'>
+    <div className='w-full h-screen text-slate-500'>
     <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance}/>
       <main className='flex flex-grow w-full md:pt-24 pt-24 min-h-max'>
       <div className='basis-1/2 p-4'>
@@ -413,6 +413,8 @@ return isMetaMaskInstalled ? (
     <button className='w-24 hover:text-fuchsia-700' onClick={handleGotodao}> Learn more...</button>
     </div>
     </div>
+
+      </main>
       <Snackbar 
       anchorOrigin={{
         vertical: 'top',
@@ -426,9 +428,9 @@ return isMetaMaskInstalled ? (
         key={state.Transition.name}>
         
         </Snackbar>
-      </main>
       <Footer/>
     </div>
+    
   ): (
     renderMetaMaskPrompt()
 );

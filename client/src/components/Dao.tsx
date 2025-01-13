@@ -297,7 +297,7 @@ const Dao = () => {
             }, [provider]);
 
     return(
-        <><div className="min-h-screen flex flex-col text-slate-500">
+        <div className="h-screen flex-col text-slate-500">
         <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance} />
         <main className="text-black container mx-auto px-6 md:pt-24 pt-24 flex-1 text-left mb-8 pb-16">
           <h1 className="text-3xl md:text-3xl text-slate-700 lg:text-8xl font-bold uppercase mb-8">Chikwama DAO</h1>
@@ -351,7 +351,7 @@ const Dao = () => {
         />
         <Footer />
       </div>
-        </>);
+        );
 }
 
 export default Dao;
