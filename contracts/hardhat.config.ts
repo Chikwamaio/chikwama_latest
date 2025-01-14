@@ -24,7 +24,12 @@ module.exports = {
       goerli: {
           url: "https://eth-goerli.g.alchemy.com/v2/YOUR_API_KEY",
           accounts: [process.env.PK]
-      }
+      },
+      mainnet: {
+        url: 'https://rootstock-mainnet.g.alchemy.com/v2/rpBzN1oI0FT_NrCDrsbwFN_wEe5xJNgT',
+        chainId: 30,
+      accounts: [process.env.PK]
+      },
   },
   solidity: "0.8.20"
 };
