@@ -48,7 +48,6 @@ const CashPoints = () => {
     const signer = provider.getSigner();
     const tokenContract = import.meta.env.VITE_TOKEN_CONTRACT;
     const ChikwamaContractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
-    const emailScriptURL = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_WEB_APP_URL;
     const cashPointsContract = new ethers.Contract(ChikwamaContractAddress, abi, signer);
     const [cardPosition, setCardPosition] = useState<{ top: number; left: number } | null>(null);
     const [openSend, setOpenSend] = useState(false);
