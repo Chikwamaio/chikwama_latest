@@ -315,15 +315,27 @@ return isMetaMaskInstalled ? (
     <div className='w-full h-screen text-slate-500'>
     <NavBar walletAddress={smartWalletAddress} eoa={account} tokenBalance={smartWalletBalance}/>
       <main className='flex flex-grow w-full md:pt-24 pt-24 min-h-max'>
-      <div className='basis-1/2 p-4'>
-      <h2 className='md:text-3xl text-3xl text-slate-700 lg:text-6xl uppercase'> Welcome to</h2>
-      <h1 className='text-3xl md:text-3xl text-slate-700 lg:text-8xl font-bold uppercase mb-8'>Chikwama</h1>
-      
-      <p className='text-xl py-12'>Send, receive, buy and sell digital dollars, anywhere!</p>
-      <button onClick={goToCashPoints} className="text-white bg-[#872A7F]  py-2 px-5 rounded drop-shadow-xl border border-transparent hover:bg-transparent hover:text-[#872A7F]  hover:border hover:border-[#872A7F]  focus:outline-none focus:ring">
-            Find a Cashpoint!
-          </button>
-      </div>
+      <div className="basis-1/2 p-6 md:p-12">
+    <h2 className="text-xl md:text-2xl text-gray-500 lg:text-4xl tracking-wide uppercase">
+      Welcome to
+    </h2>
+    <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold text-gray-800 uppercase mb-6">
+      Chikwama
+    </h1>
+    <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+      Empowering families and businesses one transaction at a time. From bustling cities to remote villages.
+    </p>
+    <p className="text-base md:text-lg text-gray-600 leading-relaxed mt-4">
+      Chikwama connects you to your loved ones and opportunities, with low-cost digital dollar conversions.
+    </p>
+    <button
+      onClick={goToCashPoints}
+      className="mt-6 text-white bg-[#872A7F] py-3 px-8 rounded-full shadow-lg border border-transparent hover:bg-transparent hover:text-[#872A7F] hover:border-[#872A7F] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#872A7F]"
+    >
+      Find a Cashpoint!
+    </button>
+  </div>
+
     <div className='basis-1/2 grid grid-cols-1 align-center bg-opacity-75  p-4'>
     <h4 className='text-xl text-slate-700 lg:text-2xl uppercase text-left'> DAO Metrics:</h4>
     <div className='bg-white rounded-md mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative  z-30'>
