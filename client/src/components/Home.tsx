@@ -49,55 +49,6 @@ const Home = () => {
   };
 
 
-//   const sendMoneyHandler = async (toAddress, amount, fee) => {
-//     // Check if the address is valid
-//     if (!ethers.utils.isAddress(toAddress)) {
-//       setState({
-//         open: true,
-//         Transition: Fade,
-//       });
-//       setErrorMessage("Invalid address. Please check the recipient address.");
-//       return;
-//     }
-  
-//     const balance = await provider.getBalance(currentAccount!);
-//     const address = toAddress;
-//     const amountEther = ethers.utils.parseUnits(amount, "ether");
-//     const feeEther = ethers.utils.parseUnits(fee, "ether");
-//     const totalCost = amountEther.add(feeEther);
-  
-//     if (balance < totalCost) {
-//       setState({
-//         open: true,
-//         Transition: Fade,
-//       });
-//       setErrorMessage(
-//         `You have less than $${ethers.utils.formatEther(
-//           totalCost
-//         )} in your wallet ${currentAccount}`
-//       );
-//       return;
-//     }
-  
-//     try {
-//       const sendXdai = await cashPointsContract.send(amountEther, address, {
-//         value: ethers.BigNumber.from(totalCost.toString()),
-//       });
-  
-//       setState({
-//         open: true,
-//         Transition: Fade,
-//       });
-//       setErrorMessage(`Transaction successful: ${sendXdai.toString()}`);
-//     } catch (error) {
-//       setState({
-//         open: true,
-//         Transition: Fade,
-//       });
-//       setErrorMessage(`Transaction failed: ${error.message}`);
-//     }
-//   };
-
   
     const checkWalletIsConnected = async () => {
       if(!provider){
@@ -155,7 +106,7 @@ const Home = () => {
           
         }
 
-      const TokenBalance = await cashPointsContract.balanceOf(account);
+      const TokenBalance  = await  cashPointsContract.balanceOf(smartWalletAddress);
 
       setTokenBalance(TokenBalance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
 
