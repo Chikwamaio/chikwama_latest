@@ -652,7 +652,7 @@ const CashPoints = () => {
     };
 
     const handleEmailSubmit = async () => {
-      const apiURL = `${import.meta.env.API_URL}/backend`;
+      const apiURL = `${import.meta.env.API_URL}/submit`;
       try {
           const response = await fetch(apiURL, {
               method: 'POST',
