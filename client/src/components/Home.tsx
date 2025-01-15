@@ -74,37 +74,38 @@ const Home = () => {
       return;
     }
 
-    if(network != 33)
-        {
-          try {
-            if(ethereum)({
-              "method": "wallet_addEthereumChain",
-              "params": [
-                {
-                  "chainId": "0x21",
-                  "chainName": "Rootstock",
-                  "rpcUrls": [
-                    "http://127.0.0.1:4444"
-                  ],
-                  "iconUrls": [
-                  ],
-                  "nativeCurrency": {
-                    "name": "TRBTC",
-                    "symbol": "TRBTC",
-                    "decimals": 18
-                  },
-                  "blockExplorerUrls": [
-                    "https://blockscout.com/poa/xdai/"
-                  ]
-                }
-              ]
-            });
-        } catch (error: any) {
-          setErrorMessage(error);
-          return;
+    if (network != 30) {
+      try {
+        if (ethereum) {
+          await ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: "0x1e", 
+                chainName: "Rootstock Mainnet",
+                rpcUrls: [
+                  "https://public-node.rsk.co" 
+                ],
+                iconUrls: [
+                  // Optional: Provide URLs to icons representing the network
+                ],
+                nativeCurrency: {
+                  name: "Rootstock BTC",
+                  symbol: "RBTC", 
+                  decimals: 18
+                },
+                blockExplorerUrls: [
+                  "https://explorer.rsk.co" 
+                ]
+              }
+            ]
+          });
         }
-          
-        }
+      } catch (error: any) {
+        setErrorMessage(error.message || "An error occurred while switching networks.");
+        return;
+      }
+    }
 
       const TokenBalance  = await  cashPointsContract.balanceOf(smartWalletAddress);
 

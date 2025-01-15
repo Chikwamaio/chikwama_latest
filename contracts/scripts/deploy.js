@@ -8,10 +8,11 @@ const hre = require("hardhat");
 require('dotenv').config();
 
 async function main() {
-  const DollarTokenContractAddress = (process.env.DollarTokenContract).toLowerCase();;
+  const DollarTokenContractAddress = (process.env.DollarTokenContract).toLowerCase();
 
   const CashPoints = await hre.ethers.getContractFactory("CashPoints");
-  const cashpoints = await CashPoints.deploy(DollarTokenContractAddress);
+  const checksumAddress = ethers.utils.getAddress(DollarTokenContractAddress);
+  const cashpoints = await CashPoints.deploy(checksumAddress);
 
   await cashpoints.deployed();
 
