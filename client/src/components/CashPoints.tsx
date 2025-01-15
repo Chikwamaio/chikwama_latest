@@ -128,7 +128,7 @@ const CashPoints = () => {
           
         };
       
-        const deployedSmartWallet = await relaySmartWalletDeployment('0');
+        const deployedSmartWallet = await relaySmartWalletDeployment("0");
         console.log(`Smart wallet deployed: ${JSON.stringify(deployedSmartWallet)}`);
       
         };
