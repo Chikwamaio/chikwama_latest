@@ -304,7 +304,7 @@ const Dao = () => {
           <p>
             A DAO or decentralised autonomous organisation is a member-owned community without centralized leadership.
             Created because said members share a common goal. The rules that govern a DAO are encoded as a{' '}
-            <Link className="text-[#872A7F]" href="https://github.com/Chikwama-io/ChikwamaWebsite/blob/master/contracts/contracts/Cashpoints.sol">
+            <Link className="text-[#872A7F]" href="https://github.com/Chikwamaio/chikwama_latest/blob/main/contracts/contracts/Cashpoints.sol">
               computer program.
             </Link>
           </p>

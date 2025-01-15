@@ -19,7 +19,7 @@ const Footer = () => {
           <a href="https://www.youtube.com/@ChikwamaDAO" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 duration-150">
             <YouTubeIcon className="text-red-600" />
           </a>
-          <a href="https://github.com/Chikwama-io/ChikwamaWebsite" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 duration-150">
+          <a href="https://github.com/Chikwamaio/chikwama_latest" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 duration-150">
             <GitHubIcon className="text-gray-800" />
           </a>
         </div>
