@@ -5,7 +5,7 @@ import YouTubeIcon from '@mui/icons-material/YouTube';
 
 const Footer = () => {
   return (
-    <footer className="mx-auto bg-gray-100 p-6 flex flex-col md:flex-row md:justify-between items-center lg:mt-80 relative md: border-t border-gray-400 pt-4 mt-auto">
+    <footer className="shadow-md bg-gray-100 border-t flex-col justify-between items-center md:pl-24 md:pr-24 justify-between items-center fixed bottom-0 left-0 w-full z-50">
       <p className="text-center md:text-left">Built by the Chikwama community</p>
 
       <div className="flex flex-col md:flex-row items-center md:items-baseline mt-4 md:mt-0">

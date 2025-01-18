@@ -319,7 +319,7 @@ return isMetaMaskInstalled ? (
     <h2 className="text-xl md:text-2xl text-gray-500 lg:text-4xl tracking-wide uppercase">
       Welcome to
     </h2>
-    <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold text-gray-800 uppercase mb-6">
+    <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold text-gray-600 uppercase mb-6">
       Chikwama
     </h1>
     <p className="text-base md:text-lg text-gray-600 leading-relaxed">
@@ -337,7 +337,7 @@ return isMetaMaskInstalled ? (
   </div>
 
     <div className='basis-1/2 grid grid-cols-1 align-center bg-opacity-75  p-4'>
-    <h4 className='text-xl text-slate-700 lg:text-2xl uppercase text-left'> DAO Metrics:</h4>
+    <h4 className='text-xl text-gray-600 lg:text-2xl uppercase text-left'> DAO Metrics:</h4>
     <div className='bg-white rounded-md mx-auto mb-4 float-right p-2 border-2 border-gray-300 h-24 w-40 metric-container relative  z-30'>
         <CalculateIcon />
         <p className='text-xl text-yellow-400 text-left' style={{ fontFamily: 'Digital-7, monospace' }}>US$ {tokenPrice}</p> 
