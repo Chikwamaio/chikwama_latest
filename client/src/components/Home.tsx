@@ -74,7 +74,7 @@ const Home = () => {
       return;
     }
 
-    if (network != 30) {
+    if (network != 33) {
       try {
         if (ethereum) {
           await ethereum.request({
@@ -206,6 +206,7 @@ const Home = () => {
         forwarderAddress: import.meta.env.VITE_CONTRACTS_SMART_WALLET,
         gasPriceFactorPercent: parseInt(import.meta.env.VITE_RIF_RELAY_GAS_PRICE_FACTOR_PERCENT),
         relayLookupWindowBlocks: parseInt(import.meta.env.VITE_RIF_RELAY_LOOKUP_WINDOW_BLOCKS),
+        minGasPrice: 65164000,
       });
       setProvider(provider);
 
