@@ -6,9 +6,10 @@ import YouTubeIcon from '@mui/icons-material/YouTube';
 const Footer = () => {
   return (
     <footer className="shadow-md bg-gray-100 border-t flex-col justify-between items-center md:pl-24 md:pr-24 justify-between items-center fixed bottom-0 left-0 w-full z-50">
-      <p className="text-center md:text-left">Built by the Chikwama community</p>
+      
 
       <div className="flex flex-col md:flex-row items-center md:items-baseline mt-4 md:mt-0">
+      <p>Built by the Chikwama community</p>
         <div className="flex space-x-3 pl-3">
           <a href="https://www.linkedin.com/in/chikwama" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 duration-150">
             <LinkedInIcon className="text-blue-700" />
