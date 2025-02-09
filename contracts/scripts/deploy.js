@@ -12,7 +12,7 @@ async function main() {
 
   const CashPoints = await hre.ethers.getContractFactory("CashPoints");
   const checksumAddress = ethers.utils.getAddress(DollarTokenContractAddress);
-  const cashpoints = await CashPoints.deploy(checksumAddress);
+  const cashpoints = await CashPoints.deploy(process.env.DollarTokenContract);
 
   await cashpoints.deployed();
 

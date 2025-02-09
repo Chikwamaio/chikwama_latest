@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import cashPoints from '../../../contracts/artifacts/contracts/Cashpoints.sol/CashPoints.json';
 import Footer from './Footer.tsx';
 import NavBar from './NavBar.tsx';
-import { setProvider, getSmartWalletAddress, UserDefinedDeployRequest, RelayClient, setEnvelopingConfig} from '@rsksmart/rif-relay-client';
+import { setProvider, getSmartWalletAddress, UserDefinedDeployRequest, RelayClient, setEnvelopingConfig, AccountManager} from '@rsksmart/rif-relay-client';
 import {
   ERC20__factory,
 } from '@rsksmart/rif-relay-contracts';
@@ -74,7 +74,7 @@ const Home = () => {
       return;
     }
 
-    if (network != 33) {
+    if (network != 30) {
       try {
         if (ethereum) {
           await ethereum.request({
@@ -206,10 +206,9 @@ const Home = () => {
         forwarderAddress: import.meta.env.VITE_CONTRACTS_SMART_WALLET,
         gasPriceFactorPercent: parseInt(import.meta.env.VITE_RIF_RELAY_GAS_PRICE_FACTOR_PERCENT),
         relayLookupWindowBlocks: parseInt(import.meta.env.VITE_RIF_RELAY_LOOKUP_WINDOW_BLOCKS),
-        minGasPrice: 65164000,
       });
       setProvider(provider);
-
+      
       const fetchSmartWalletAddress = async (account: string) => {
         const smartWalletAddress = await getSmartWalletAddress(account, index);
         console.log(`Your smart wallet address is ${smartWalletAddress}`);
@@ -226,6 +225,8 @@ const Home = () => {
 
       const initialize = async () => {
         const account = await getProviderWallet();
+        AccountManager.getInstance();
+        
         if (account) {
           await fetchSmartWalletAddress(account);
         } else {
