@@ -241,7 +241,7 @@ const Home = () => {
   
 
   useEffect(() => {
-    console.log(ethereum, provider)
+    console.log(provider?.getGasPrice())
   }, []);
 
   useEffect(() => {
