@@ -241,7 +241,8 @@ const Home = () => {
   
 
   useEffect(() => {
-    console.log(provider?.getGasPrice())
+    const gas = provider?.getGasPrice();
+    if(gas) console.log('the current gas price is', gas)
   }, []);
 
   useEffect(() => {
